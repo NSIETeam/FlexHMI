@@ -7,7 +7,7 @@ const {validateKnowledgeRevision,citationProblems,assertAssessmentFresh,mountAss
 const clone=x=>JSON.parse(JSON.stringify(x));
 const digest=p=>crypto.createHash('sha256').update(JSON.stringify(p)).digest('hex');
 const modes=['visualization','intelligent-control','industry-ai'];
-const operations=['project.create','project.load','project.delete','project.restore','project.configure','device.upsert','device.delete','tag.upsert','tag.delete','page.upsert','page.delete','component.upsert','component.delete','connection.upsert','connection.delete','asset.upsert','asset.delete','page.optimize','project.optimize','rule.upsert','rule.delete','knowledge.upsert','knowledge.delete'];
+const operations=['project.create','project.load','project.delete','project.restore','project.revert','project.configure','device.upsert','device.delete','tag.upsert','tag.delete','page.upsert','page.delete','component.upsert','component.delete','connection.upsert','connection.delete','asset.upsert','asset.delete','page.optimize','project.optimize','rule.upsert','rule.delete','knowledge.upsert','knowledge.delete'];
 const idOk=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,90}$/.test(x)&&!['__proto__','constructor','prototype'].includes(x);
 function need(value,message){if(!value)throw Error(message);return value}
 function upsert(list,value){need(value&&idOk(value.id),'对象需要有效 id');const i=list.findIndex(x=>x.id===value.id);if(i<0)list.push(clone(value));else list[i]={...list[i],...clone(value)}}
@@ -25,10 +25,10 @@ function repair(p,impacts){
  for(const r of p.control?.rules||[]){const missing=[r.inputTag,r.outputTag,...(r.guards||[]).map(g=>g.tagId)].filter(id=>!tags.has(id));if(missing.length){r.enabled=false;r.invalidReason='关联变量已删除：'+[...new Set(missing)].join('、');impacts.push({code:'rule-disabled',entity:r.id,message:'控制规则已停用：'+r.invalidReason});}else {const problems=citationProblems(p,r);if(problems.length){r.enabled=false;r.invalidReason=problems.join('；');impacts.push({code:'rule-evidence-invalid',entity:r.id,message:'关联依据变化，规则已停用：'+r.invalidReason});}else delete r.invalidReason;}}
  if(!p.pages.some(pg=>pg.id===p.activePageId)){p.activePageId=p.pages[0]?.id;impacts.push({code:'active-page-changed',message:'当前画面已切换到保留的第一页'})}
 }
-async function applyOperations(before,request,validate,store){
+async function applyOperations(before,request,validate,store,history){
  need(Array.isArray(request.operations)&&request.operations.length>0&&request.operations.length<=500,'每个计划需要 1–500 个操作');
- let p=clone(before);const impacts=[],diagnostics=[],optimize=new Set(),fileConditions=[];let fileEffect=null;
- const lifecycle=request.operations.filter(op=>['project.create','project.load','project.delete','project.restore'].includes(op?.op));need(lifecycle.length<=1,'一个计划只能包含一项工程新建、加载、删除或恢复操作');
+ let p=clone(before);const impacts=[],diagnostics=[],optimize=new Set(),fileConditions=[];let fileEffect=null,revertsPlanId=null;
+ const lifecycle=request.operations.filter(op=>['project.create','project.load','project.delete','project.restore','project.revert'].includes(op?.op));need(lifecycle.length<=1,'一个计划只能包含一项工程生命周期或历史恢复操作');
  for(const op of request.operations){need(op&&operations.includes(op.op),'未知操作：'+op?.op);
   const pg=()=>need(p.pages.find(x=>x.id===op.pageId),'找不到画面：'+op.pageId);
   const dev=()=>need(p.devices.find(x=>x.id===op.deviceId),'找不到设备：'+op.deviceId);
@@ -36,6 +36,22 @@ async function applyOperations(before,request,validate,store){
    case 'project.create':need(request.operations[0]===op,'新建工程必须是首个操作');need(op.project,'缺少工程');need(op.project.id!==before.id,'新建工程必须使用新的 ID');p=clone(op.project);if(store){need(!store.exists(p.id),'工程 ID 已存在，请使用新的 ID');fileConditions.push({id:p.id,revision:null})}break;
    case 'project.load':{need(store,'当前上下文不支持保存工程管理');need(request.operations[0]===op,'加载工程必须是首个操作');const result=store.prepare(op,before.id);p=clone(result.project);fileConditions.push(...result.conditions);impacts.push({code:'saved-project-load',entity:p.id,message:'加载所预览版本的已保存工程；自动控制将暂停，通信、历史缓存和手动模拟值可能重置。其他编辑窗口尚未保存的修改不会带入。'});break;}
    case 'project.delete':case 'project.restore':{need(store,'当前上下文不支持保存工程管理');need(request.operations.length===1,'删除或恢复保存工程必须单独预览');const result=store.prepare(op,before.id);fileConditions.push(...result.conditions);fileEffect=result.effect;impacts.push({code:fileEffect.action==='delete'?'project-archived':'project-restored',entity:result.project.id,message:fileEffect.action==='delete'?'该保存工程将移入可恢复的归档区；当前运行工程和设备不受影响。':'归档工程将回到工程列表；不会切换当前工程、启动通信或自动控制。'});break;}
+   case 'project.revert':{
+    need(history,'当前上下文不支持历史版本恢复');need(request.operations.length===1,'历史版本恢复必须单独预览');
+    const source=history.read(op.planId);need(source.status==='applied'&&source.before&&!source.fileEffect,'只能恢复已应用的工程修改；归档操作请使用工程恢复');
+    need(source.before.id===before.id&&source.project?.id===before.id,'只能恢复当前工程的修改记录；跨工程创建或加载请使用工程列表');
+    p=clone(source.before);revertsPlanId=source.id;
+    const changedKnowledge=(p.knowledge||[]).filter(e=>{const current=before.knowledge?.find(x=>x.id===e.id);return !current||digest(current)!==digest(e)});
+    if(changedKnowledge.length){
+     const versions=history.knowledgeVersions(before.id);
+     for(const e of changedKnowledge){const old=e.version;e.version=Math.max(versions[e.id]||0,before.knowledge?.find(x=>x.id===e.id)?.version||0,old)+1;
+      impacts.push({code:'knowledge-restored-new-version',entity:e.id,message:`资料“${e.title}”恢复历史正文并创建版本 ${e.version}；旧引用不自动重新授权，相关规则需重新评估`});}
+    }
+    impacts.push({code:'engineering-snapshot-restored',entity:source.id,message:'恢复到此操作应用前的工程配置；预览明细包含此后修改中将被覆盖的内容。当前保存工程和其他打开窗口的状态需重新核对。'},
+     {code:'control-paused',message:'恢复后自动控制保持暂停，必须重新检查规则并启动；已有授权不会恢复'},
+     {code:'physical-state-not-reverted',message:'仅恢复工程配置，不恢复历史实时值、设备输出或生产过程；已经发出的设备指令不会撤销'});
+    break;
+   }
    case 'project.configure':if(op.name!==undefined)p.name=op.name;if(op.mode!==undefined){need(modes.includes(op.mode),'系统模式无效');p.system={...p.system,mode:op.mode}}break;
    case 'device.upsert':upsert(p.devices,op.device);break;
    case 'device.delete':p.devices=remove(p.devices,op.id);break;
@@ -67,7 +83,7 @@ async function applyOperations(before,request,validate,store){
  if(p.id!==before.id)impacts.push({code:'project-switch',message:'当前运行工程将切换；原工程文件保留'});
  if(JSON.stringify([p.control,p.system?.mode,p.knowledge])!==JSON.stringify([before.control,before.system?.mode,before.knowledge]))impacts.push({code:'control-paused',message:'控制规则、模式或知识资料变化会暂停自动控制；应用计划不会自动启动，须在控制面板重新检查并启动'});
  if(p.system?.mode==='industry-ai')impacts.push({code:'industry-review-required',message:'行业评估可引用本地资料和当前观测生成建议；模型质量与资料适用性须检查，工程计划应用不会自动启动控制'});
- return {project:p,changes:changes(before,p),impacts,diagnostics,fileConditions,pauseControl:lifecycle[0]?.op==='project.load',blocked:diagnostics.some(d=>d.code==='route-blocked')};
+ return {project:p,changes:changes(before,p),impacts,diagnostics,fileConditions,pauseControl:lifecycle[0]?.op==='project.load'||!!revertsPlanId,...(revertsPlanId?{revertsPlanId}:{}),blocked:diagnostics.some(d=>d.code==='route-blocked')};
 }
 function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,validate,dir}){
  const projects=projectStore(dir,validate);
@@ -76,26 +92,27 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
  function readPlan(name){const p=JSON.parse(fs.readFileSync(path.join(folder,name),'utf8'));need(idOk(p.id)&&p.id+'.json'===name,'计划记录 ID 不一致');return p}
  function scanPlans(){return fs.readdirSync(folder).filter(f=>/^plan_[a-zA-Z0-9_-]+\.json$/.test(f))}
  function store(p){const f=planFile(p.id);fs.writeFileSync(f+'.tmp',JSON.stringify(p));fs.renameSync(f+'.tmp',f)}
+ const history={read:id=>{planFile(id);return readPlan(id+'.json')},knowledgeVersions:projectId=>{const versions=Object.create(null);for(const name of scanPlans()){const record=readPlan(name);for(const p of [record.before,record.project])if(p?.id===projectId)for(const e of p.knowledge||[])versions[e.id]=Math.max(versions[e.id]||0,e.version)}return versions}};
  const audit=e=>fs.appendFileSync(path.join(folder,'audit.jsonl'),JSON.stringify({at:new Date().toISOString(),...e})+'\n');
  const endpoint=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||400).json({error:e.message,code:e.code||'invalid-plan',...(e.outcomeUnknown?{outcomeUnknown:true}:{})})}};
  const conflict=()=>{const e=Error('工程已被其他操作修改，请重新读取状态并预览计划');e.status=409;e.code='revision-conflict';throw e};
- router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','saved-project-lifecycle','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','state-machine-editor','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
+ router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','saved-project-lifecycle','engineering-history-revert','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','state-machine-editor','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
  router.get('/agent/projects',endpoint(async(req,res)=>res.json(projects.inventory(getProject().id))));
  router.get('/agent/projects/:id',endpoint(async(req,res)=>res.json(projects.read(req.params.id,req.query.archived==='1'))));
- router.get('/agent/plans',endpoint(async(req,res)=>res.json(scanPlans().map(f=>{try{const p=readPlan(f);return {id:p.id,summary:p.summary,status:p.status,createdAt:p.createdAt,recovery:p.recovery}}catch(e){return {id:f.slice(0,-5),summary:'计划记录无法读取',status:'unreadable',error:e.message,createdAt:0}}}).sort((a,b)=>Number(['interrupted','unreadable'].includes(b.status))-Number(['interrupted','unreadable'].includes(a.status))||b.createdAt-a.createdAt).slice(0,200))));
+ router.get('/agent/plans',endpoint(async(req,res)=>res.json(scanPlans().map(f=>{try{const p=readPlan(f);return {id:p.id,summary:p.summary,status:p.status,createdAt:p.createdAt,recovery:p.recovery,projectId:p.project?.id,revertsPlanId:p.revertsPlanId,canRevert:p.status==='applied'&&!p.fileEffect&&p.before?.id===getProject().id&&p.project?.id===getProject().id}}catch(e){return {id:f.slice(0,-5),summary:'计划记录无法读取',status:'unreadable',error:e.message,createdAt:0}}}).sort((a,b)=>Number(['interrupted','unreadable'].includes(b.status))-Number(['interrupted','unreadable'].includes(a.status))||b.createdAt-a.createdAt).slice(0,200))));
  router.get('/agent/state',endpoint(async(req,res)=>res.json({revision:digest(getProject()),project:getProject()})));
  router.get('/agent/audit',endpoint(async(req,res)=>{const f=path.join(folder,'audit.jsonl');res.json(fs.existsSync(f)?fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).slice(-200).map(x=>JSON.parse(x)):[])}));
  async function previewPlan(request,signal,assessment){const before=clone(getProject()),revision=digest(before);need(typeof request.expectedRevision==='string','请先读取 /agent/state 的 revision');if(request.expectedRevision!==revision)conflict();
-  const result=await applyOperations(before,request,validate,projects);if(request.operations.some(o=>o.op==='project.create')&&fs.existsSync(path.join(dir,result.project.id+'.json')))throw Error('工程 ID 已存在，请使用新的 ID');const plan={id:'plan_'+crypto.randomUUID().replaceAll('-',''),createdAt:Date.now(),expiresAt:Date.now()+900000,expectedRevision:revision,actor:String(request.actor||'local').slice(0,100),summary:String(request.summary||'工程修改').slice(0,500),status:'preview',...result};
+  const result=await applyOperations(before,request,validate,projects,history);if(request.operations.some(o=>o.op==='project.create')&&fs.existsSync(path.join(dir,result.project.id+'.json')))throw Error('工程 ID 已存在，请使用新的 ID');const plan={id:'plan_'+crypto.randomUUID().replaceAll('-',''),createdAt:Date.now(),expiresAt:Date.now()+900000,expectedRevision:revision,actor:String(request.actor||'local').slice(0,100),summary:String(request.summary||'工程修改').slice(0,500),status:'preview',...result};
   if(revision!==digest(getProject()))conflict();
-  if(assessment){need(!request.operations.some(o=>['project.create','project.load','project.delete','project.restore'].includes(o.op)),'行业评估不能切换、删除或恢复工程，请单独预览后重新评估');assertAssessmentFresh(assessment,before,getValues());assertAssessmentFresh(assessment,result.project,getValues());plan.assessment=assessment;plan.expiresAt=Math.min(plan.expiresAt,assessment.expiresAt);}
+  if(assessment){need(!request.operations.some(o=>['project.create','project.load','project.delete','project.restore','project.revert'].includes(o.op)),'行业评估不能切换、删除或恢复工程，请单独预览后重新评估');assertAssessmentFresh(assessment,before,getValues());assertAssessmentFresh(assessment,result.project,getValues());plan.assessment=assessment;plan.expiresAt=Math.min(plan.expiresAt,assessment.expiresAt);}
   if(signal?.aborted)throw Error('生成已停止');
-  store(plan);audit({event:'preview',planId:plan.id,actor:plan.actor,changeCount:plan.changes.length});return plan;
+  store(plan);audit({event:'preview',planId:plan.id,actor:plan.actor,changeCount:plan.changes.length,...(plan.revertsPlanId?{revertsPlanId:plan.revertsPlanId}:{})});return plan;
  }
 
  router.post('/agent/plans',endpoint(async(req,res)=>res.json(await previewPlan(req.body))));
  mountAssessments(router,{dir,getProject,getValues,digest,previewPlan,audit});
- mountAi(router,{dir,getProject,getValues,digest,previewPlan,validatePlan:(before,request)=>applyOperations(before,request,validate,projects),audit});
+ mountAi(router,{dir,getProject,getValues,digest,previewPlan,validatePlan:(before,request)=>applyOperations(before,request,validate,projects,history),audit});
  router.get('/agent/plans/:id',endpoint(async(req,res)=>res.json(JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8')))));
  router.post('/agent/plans/:id/apply',endpoint(async(req,res)=>res.json(await serial(async()=>{
   const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));
@@ -107,7 +124,7 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
   try{if(p.fileEffect)projects.execute(p.fileEffect);else await activate(p.project,{pauseControl:p.pauseControl})}
   catch(e){p.status='failed';p.error=e.message;try{if(!p.fileEffect)await activate(before);p.restored=p.fileEffect?!projects.completed(p.fileEffect):true}catch(restore){p.restored=false;p.restoreError=restore.message}store(p);audit({event:'failed',planId:p.id,error:p.error,restored:p.restored});throw e}
   p.status='applied';p.resultRevision=digest(getProject());
-  try{store(p);audit({event:'applied',planId:p.id,actor:p.actor,revision:p.resultRevision})}catch(e){e.outcomeUnknown=true;e.code='journal-write-failed';throw e}
+  try{store(p);audit({event:'applied',planId:p.id,actor:p.actor,revision:p.resultRevision,...(p.revertsPlanId?{revertsPlanId:p.revertsPlanId}:{})})}catch(e){e.outcomeUnknown=true;e.code='journal-write-failed';throw e}
   return {id:p.id,status:p.status,revision:p.resultRevision,project:getProject()};
  }))));
  router.post('/agent/plans/:id/cancel',endpoint(async(req,res)=>res.json(await serial(async()=>{const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));need(p.status==='preview','只有未应用计划可以取消');p.status='cancelled';store(p);audit({event:'cancelled',planId:p.id});return {id:p.id,status:p.status}}))));

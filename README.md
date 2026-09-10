@@ -14,6 +14,10 @@ AI 工作台支持三种模式、生成计划、引用知识评估、关联影�
 
 macOS **0.4.1 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.1-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
+## 最新源码进展（尚未纳入已发布安装包）
+
+AI 工作台 → 工程与记录支持“恢复修改前版本”。先逐项查看应用前后差异，再应用；恢复会暂停自动控制，知识正文以新版本保存，现场设备输出不会回滚。HTTP、内置模型操作契约与 MCP 共用 project.revert。见 [Agent 历史恢复说明](docs/simplehmi/ai/AGENT-API.md#恢复修改前版本)。
+
 ## 历史 0.2.0 桌面版与图形扩展
 
 提供 Windows x64 / ARM64 两种安装包，内置运行环境。安装、架构与验收边界见 [发布说明](docs/simplehmi/RELEASE-0.2.0.md)，完整产品批判见 [审查记录](docs/simplehmi/PRODUCT-REVIEW.md)。当前未签名，尚未完成 Windows 实机安装回归。

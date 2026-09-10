@@ -25,6 +25,7 @@
 | project.load | id, expectedSavedRevision | 加载已保存工程，必须首项；可后接工程编辑，加载会暂停自动控制 |
 | project.delete | id, expectedSavedRevision | 单独计划；将非当前工程移到可恢复归档区，当前通信不变 |
 | project.restore | archiveId, expectedSavedRevision | 单独计划；恢复归档到工程列表，不覆盖同 ID 工程，不激活设备 |
+| project.revert | planId | 单独计划；恢复当前工程某次已应用修改之前的配置，先预览覆盖差异，应用后暂停自动控制 |
 | project.configure | name 和/或 mode | mode = visualization / intelligent-control / industry-ai |
 | device.upsert | device | 按 id 新增/合并；新增必须有完整设备配置 |
 | device.delete | id | 删除设备与点位，自动清理显示、动作、详情和管线绑定 |
@@ -97,3 +98,13 @@
 自动端口被组件或名称遮挡时可以改选其他侧，并返回 `port-adjusted` 和 `routeInfo.autoPortAdjusted`。用户明确指定的端口不被替换。没有可用路径时仍返回 `route-blocked` 阻止计划应用。`route-crossing` 提示几何交叉而非工艺连通，`route-overlap` 提示需要区分的共线路径；这两项为可审阅诊断，不会伪造新的连接节点。名称区域按单行排版参与避让。
 
 管线 `tagId` 绑定 Bool 时可驱动运行页流动显示；仅接受新鲜的 true/1，false/0 停止，失效显示未知。其他类型保留兼容绑定但不被误当成流动。图形连接不会自动改变过程模型或控制规则。
+
+## 恢复修改前版本
+
+AI 工作台 → 工程与记录 → 最近操作 → 恢复修改前版本。普通预览会显示全部变化和逐项“应用前 / 应用后”内容，点击应用后才修改工程。也可通过 HTTP / MCP 的普通 preview 提交单项 `{"op":"project.revert","planId":"plan_..."}`，继续使用 expectedRevision 与原有 apply / cancel 流程。恢复计划标记 revertsPlanId，来源记录保留。
+
+只接受当前工程内、已应用且拥有 before 快照的工程修改记录；跨工程创建/加载、未完成记录及归档文件操作不能借此恢复。可以选择较早记录，但该操作之后的配置变化可能被覆盖，必须检查完整差异；其他窗口未保存的修改不包含在快照里。直接保存和编辑器本地撤销尚未形成这类 Agent 历史记录。
+
+知识正文恢复按已保留计划中的最高版本创建新版本，不复用旧版本号；不自动重写规则引用，失效依据对应规则会停用，需重新评估。若历史记录损坏导致不能核对知识版本，恢复会报错，不能跳过版本校验。无论修改是否涉及控制，恢复应用都暂停自动控制。不会恢复历史实时值、写入设备或撤销已发出的现场指令。
+
+恢复操作沿用串行应用、15 分钟预览过期、版本冲突保护、持久化幂等和中断核对。新应用的恢复计划也保留自身 before 快照，可再次预览恢复。当前不是通用磁盘灾难恢复或生产过程回滚。

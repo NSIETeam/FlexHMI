@@ -77,7 +77,7 @@ function mountAssessments(router,{dir,getProject,getValues,digest,previewPlan,au
   if(Date.now()>=context.expiresAt)throw Error('评估上下文已过期');
   if(typeof request.summary!=='string'||!request.summary.trim()||request.summary.length>500||!Array.isArray(request.operations)||request.operations.length>500)throw Error('评估需要说明与操作数组');
   const assessment=verifyAssessment(request,context.context);assertAssessmentFresh(assessment,getProject(),getValues());
-  if(request.operations.some(o=>!o||['project.create','knowledge.upsert','knowledge.delete'].includes(o.op)))throw Error('评估不能同时切换工程或修改依据');
+  if(request.operations.some(o=>!o||['project.create','project.revert','knowledge.upsert','knowledge.delete'].includes(o.op)))throw Error('评估不能同时切换工程或修改依据');
   const operations=structuredClone(request.operations);for(const o of operations)if(o.op==='rule.upsert'&&o.rule)o.rule.evidence=assessment.citations.map(c=>({entryId:c.entryId,version:c.version}));
   const record={id:'evaluation_'+crypto.randomUUID().replaceAll('-',''),createdAt:Date.now(),contextId:context.id,assessment,summary:request.summary,status:'report'};
   if(operations.length){record.plan=await previewPlan({expectedRevision:context.expectedRevision,summary:request.summary,operations,actor:'external-assessor'},undefined,assessment);record.status='preview';}
