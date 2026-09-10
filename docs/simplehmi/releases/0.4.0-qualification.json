@@ -1,0 +1,100 @@
+{
+  "version": "0.4.0",
+  "channel": "preview",
+  "sourceCommit": "4568111f3f881c15660d86e8d69b48b4231c3008",
+  "qualifiedScope": "Windows hosted-runner installation and stated application checks; not field certification",
+  "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34492968066",
+  "qualifiedAt": "2026-09-10T15:09:17.608482+00:00",
+  "codeSigned": false,
+  "physicalHardwareTested": false,
+  "realModelProviderTested": false,
+  "windows10Tested": false,
+  "architectures": [
+    {
+      "build": {
+        "sourceProvenanceVerified": true,
+        "bytes": 60160356,
+        "payloadSHA256": "eaa1f2aca1655036a57b8e485417f91c06dad89fdb866e97b854f4803bf4558f",
+        "arch": "x64",
+        "mcpIncluded": true,
+        "sourceCommit": "4568111f3f881c15660d86e8d69b48b4231c3008",
+        "sha256": "3d420b668aceaed738ef1a883f1bea3f440329228b21dca6d6c035b0810cd3e1",
+        "wrapper": "matched Windows NSIS 3.0.4.1",
+        "version": "0.4.0",
+        "file": "FlexHMI-0.4.0-IPC-Windows-x64-Setup.exe"
+      },
+      "installedAcceptance": {
+        "stop": true,
+        "upgrade": true,
+        "simulation": true,
+        "installerExecuted": true,
+        "singleInstance": true,
+        "editorRendered": true,
+        "kioskLaunchRequested": true,
+        "arch": "x64",
+        "uninstall": true,
+        "userDataPreserved": true,
+        "persistence": true,
+        "platform": "Windows",
+        "runtimeRendered": true,
+        "physicalHardwareTested": false,
+        "nativeRuntime": true
+      },
+      "latestFeatures": {
+        "sourceCommit": "4568111f3f881c15660d86e8d69b48b4231c3008",
+        "version": "0.4.0",
+        "sourceFilesVerified": 589,
+        "mcpInstalled": true,
+        "mcpToolCount": 23,
+        "ipcDiscovery": true,
+        "connectionEditorShipped": true,
+        "physicalWrites": false
+      },
+      "nativeRuntimeLog": "v22.23.2 x64\nSQLite OK\nSerial binding OK, ports: 1\n",
+      "runner": "windows-2025"
+    },
+    {
+      "build": {
+        "mcpIncluded": true,
+        "wrapper": "matched Windows NSIS 3.0.4.1",
+        "sourceProvenanceVerified": true,
+        "bytes": 56215114,
+        "payloadSHA256": "520d26ba820bf2b72639c0d462e710eb174452f3b2df5dbe2cfda2529ce1f320",
+        "file": "FlexHMI-0.4.0-IPC-Windows-arm64-Setup.exe",
+        "sourceCommit": "4568111f3f881c15660d86e8d69b48b4231c3008",
+        "version": "0.4.0",
+        "arch": "arm64",
+        "sha256": "77e7ac996ab99e6cb25f79867db7cf2cb73e16701a38dda65556bfa649c1218d"
+      },
+      "installedAcceptance": {
+        "runtimeRendered": true,
+        "editorRendered": true,
+        "stop": true,
+        "singleInstance": true,
+        "persistence": true,
+        "nativeRuntime": true,
+        "arch": "arm64",
+        "kioskLaunchRequested": true,
+        "simulation": true,
+        "upgrade": true,
+        "physicalHardwareTested": false,
+        "userDataPreserved": true,
+        "platform": "Windows",
+        "installerExecuted": true,
+        "uninstall": true
+      },
+      "latestFeatures": {
+        "sourceCommit": "4568111f3f881c15660d86e8d69b48b4231c3008",
+        "version": "0.4.0",
+        "sourceFilesVerified": 589,
+        "mcpInstalled": true,
+        "mcpToolCount": 23,
+        "ipcDiscovery": true,
+        "connectionEditorShipped": true,
+        "physicalWrites": false
+      },
+      "nativeRuntimeLog": "v22.23.2 arm64\nSQLite OK\nSerial binding OK, ports: 0\n",
+      "runner": "windows-11-arm"
+    }
+  ]
+}
