@@ -7,6 +7,11 @@ on:
         required: true
         default: v0.3.0-ipc-preview
         type: string
+      rebuild_installer:
+        description: Rebuild the wrapper with matching Windows NSIS tools; preserve candidate payload
+        required: true
+        default: true
+        type: boolean
 permissions:
   contents: read
 jobs:
@@ -64,6 +69,10 @@ jobs:
           $installer=Join-Path $dir $entry.file
           if((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256){throw 'Installer SHA256 differs from release manifest'}
           "FLEX_INSTALLER=$installer" >> $env:GITHUB_ENV
+      - name: Rebuild wrapper with matching Windows tools
+        if: inputs.rebuild_installer
+        shell: pwsh
+        run: ./scripts/windows/rebuild-installer.ps1 -Installer $env:FLEX_INSTALLER -Arch '${{ matrix.arch }}' -Output '${{ runner.temp }}/flex-evidence/FlexHMI-0.3.0-IPC-Windows-${{ matrix.arch }}-WindowsBuilt-Setup.exe'
       - name: Install and exercise shipped package
         shell: pwsh
         run: ./scripts/windows/verify-installed.ps1 -Installer $env:FLEX_INSTALLER -Arch '${{ matrix.arch }}' -Artifacts '${{ runner.temp }}/flex-evidence'
