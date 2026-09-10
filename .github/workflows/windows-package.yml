@@ -10,7 +10,30 @@ on:
 permissions:
   contents: read
 jobs:
+  prepare-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # GitHub exposes draft releases only with push access. Keep that token in
+    # this download-only job; installer execution receives read permissions.
+    permissions:
+      contents: write
+    steps:
+      - name: Download draft candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir candidate
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*-Windows-*-Setup.exe' --pattern '*IPC-build.json' --dir candidate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-installers
+          path: candidate/
+          retention-days: 3
+          if-no-files-found: error
   installed-package:
+    needs: prepare-candidate
     strategy:
       fail-fast: false
       matrix:
@@ -23,18 +46,19 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Download and verify candidate
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: candidate-installers
+          path: ${{ runner.temp }}/flex-candidate
+      - name: Verify candidate
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
           TARGET_ARCH: ${{ matrix.arch }}
         run: |
           $ErrorActionPreference = 'Stop'
           $dir = Join-Path $env:RUNNER_TEMP 'flex-candidate'
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern "*-Windows-$env:TARGET_ARCH-Setup.exe" --pattern '*IPC-build.json' --dir $dir
-          if($LASTEXITCODE -ne 0){throw 'Release download failed'}
           $manifest = Get-Content (Join-Path $dir 'FlexHMI-0.3.0-IPC-build.json') -Raw | ConvertFrom-Json
           $entry = $manifest | Where-Object {$_.arch -eq $env:TARGET_ARCH}
           $installer=Join-Path $dir $entry.file
