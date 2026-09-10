@@ -4,9 +4,11 @@
 
 本项目是可以启动、保存工程和读取/写入 Modbus 的功能 MVP。FUXA 的协议驱动、设备状态机、内部变量、数据采集及完整工程师编辑器全部保留。
 
+**官网与下载：[flexhmi.nsieteam.chatgpt.site](https://flexhmi.nsieteam.chatgpt.site)**
+
 ## 工控机预览版与 AI 工作台
 
-产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。新工控机版复用已安装的 Microsoft Edge，内置 Node.js 与完整通讯依赖，提供编辑、运行、全屏与停止服务入口，见 [工控机版说明](docs/simplehmi/IPC-EDITION.md)。Windows x64 / ARM64 安装包为未签名预览版。旧交叉构建安装器启动时崩溃；使用匹配的 Windows 工具链重建安装器后，双架构自动验收已通过。重建包仍使用 0.3.0 旧载荷，不包含此后新增的 MCP 与连接编辑功能，尚未作为正式版本发布。
+产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。工控机版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.0 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.0-preview)、[工控机版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.2 MB，ARM64 约 56.2 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
 
 AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务，尚未用真实账号验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
 
@@ -237,14 +239,15 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 
 源码现提供官方 MCP SDK 的本机 stdio 扩展。使用 Node.js 22+，在仓库根目录运行 `npm run setup:mcp`，然后在 **AI 工作台 → 连接外部 Agent** 复制当前机器的配置。完整范围提供 23 个工具，支持工程预览/应用、实时值与历史、知识评估、控制启停和带版本/当前值/时效检查的点位写入；真实输出默认关闭。
 
-详见 [接入说明](integrations/mcp/README.md)。0.4.0 工控机载荷已纳入此扩展；0.3.0 IPC 旧包不包含。后端 80 项回归及官方 MCP 客户端 3 项测试已通过；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
+详见 [接入说明](integrations/mcp/README.md)。0.4.0 工控机安装包已纳入并验收此扩展；0.3.0 IPC 旧包不包含。后端 80 项回归及官方 MCP 客户端 3 项测试已通过；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
 
 ## Windows 安装验收状态
 
-Windows x64、ARM64 候选安装包保留在维护者可见的草稿发布中。已提交手动运行的双架构安装验收工作流，覆盖原生依赖、启动/停止、保存恢复、同版覆盖安装和卸载保留数据。
+[0.4.0 双架构安装验收](https://github.com/NSIETeam/FlexHMI/actions/runs/34492968066) 在 GitHub 托管的 Windows Server 2025 x64 和 Windows 11 ARM64 上成功。覆盖中文路径安装、原生依赖、模拟启停与守恒、编辑/运行界面、保存重开、单实例、停止、同版覆盖安装和卸载保留数据；验证内置 MCP 23 工具及安装后的 589 个项目文件与源码一致。
 
-[Windows 双架构自动验收](https://github.com/NSIETeam/FlexHMI/actions/runs/34490584866) 已成功完成，使用 GitHub 托管 Windows x64 和 ARM64 测试机，并先通过匹配的 Windows NSIS 工具链重建安装器。首次运行曾被计费限制阻止，公开仓库后已解除该阻碍；旧交叉构建安装包随后被发现启动崩溃，不应使用。此次通过不代表客户工控机或真实 PLC 验收，也不代表旧包已包含最新源码功能。
+[验收清单](docs/simplehmi/releases/0.4.0-qualification.json) 与 [版本边界](docs/simplehmi/releases/0.4.0.md) 对应实际执行的安装器哈希。未完成 Windows 10、客户工控机、物理 PLC / 串口或真实模型服务验证，不以此声明全产品成熟或现场认证。
 
+## 保存工程管理与中断核对
 
 外部 Agent 与 AI 工作台新增保存工程管理：完整读取、加载、归档删除、恢复，以及操作历史。运行工程版本和保存文件版本分别校验，避免预览后文件变化造成覆盖；创建、加载或恢复目标冲突会拒绝。加载工程会暂停自动控制，恢复归档只放回工程列表。详见 [Agent API](docs/simplehmi/ai/AGENT-API.md)。
 
