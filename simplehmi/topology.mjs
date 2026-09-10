@@ -1,3 +1,4 @@
+import {graphColumns} from './graph-layout.mjs';
 // Deterministic topology layout and orthogonal routing. Shared by browser and agent.
 const clone = x => JSON.parse(JSON.stringify(x));
 const rect = (c,pad=0) => ({x:c.x-pad,y:c.y-pad,r:c.x+c.w+pad,b:c.y+c.h+pad});
@@ -27,7 +28,8 @@ export function portAnchor(c,side) {
 }
 function escapePort(c,side,anchor){const gap=20;return {x:side==='left'?c.x-gap:side==='right'?c.x+c.w+gap:anchor.x,y:side==='top'?c.y-gap:side==='bottom'?c.y+c.h+gap:anchor.y}}
 function simplify(points){const out=[];for(const p of points){if(out.length&&out.at(-1).x===p.x&&out.at(-1).y===p.y)continue;while(out.length>1){const a=out.at(-2),b=out.at(-1);if((a.x===b.x&&b.x===p.x&&(b.y-a.y)*(p.y-b.y)>=0)||(a.y===b.y&&b.y===p.y&&(b.x-a.x)*(p.x-b.x)>=0))out.pop();else break}out.push(p)}return out}
-function facing(a,b,side){const [dx,dy]=vector[side];return (b.x-a.x)*dx+(b.y-a.y)*dy>0}
+function dot(a,b,side){const [dx,dy]=vector[side];return (b.x-a.x)*dx+(b.y-a.y)*dy}
+const facing=(a,b,side)=>dot(a,b,side)>0;
 function preferredRoute(start,end,boxes,aSide,bSide){
   const horizontal=s=>s==='left'||s==='right',candidates=[];
   if(start.x===end.x||start.y===end.y)candidates.push([start,end]);
@@ -35,7 +37,7 @@ function preferredRoute(start,end,boxes,aSide,bSide){
   else if(!horizontal(aSide)&&!horizontal(bSide)){const y=round((start.y+end.y)/2);candidates.push([start,{x:start.x,y},{x:end.x,y},end])}
   else candidates.push(horizontal(aSide)?[start,{x:end.x,y:start.y},end]:[start,{x:start.x,y:end.y},end]);
   for(const raw of candidates){const pts=simplify(raw);if(pts.length<2)continue;
-    if(!facing(pts[0],pts[1],aSide)||!facing(pts.at(-1),pts.at(-2),bSide))continue;
+    if(dot(pts[0],pts[1],aSide)<0||dot(pts.at(-1),pts.at(-2),bSide)<0)continue;
     if(pts.slice(1).every((p,i)=>!segmentBlocked(pts[i],p,boxes)))return pts;
   }
   return null;
@@ -54,7 +56,7 @@ function route(start,end,boxes,width,height,aSide,bSide) {
   if([sx,sy,ex,ey].some(i=>i<0))throw Error('端口超出画面，请增加设备边距');
   const initial={x:sx,y:sy,d:direction[aSide],g:0,f:0,k:key(sx,sy,direction[aSide])};q.push(initial);dist.set(initial.k,0);
   let found,visits=0;
-  while(q.a.length){const n=q.pop();if(n.g!==dist.get(n.k))continue;if(++visits>180000)throw Error('布线搜索超出预算，请拆分画面或增加间距');if(n.x===ex&&n.y===ey&&n.d===opposite(direction[bSide])){found=n;break}
+  while(q.a.length){const n=q.pop();if(n.g!==dist.get(n.k))continue;if(++visits>180000)throw Error('布线搜索超出预算，请拆分画面或增加间距');if(n.x===ex&&n.y===ey&&n.d!==direction[bSide]){found=n;break}
     for(const [dx,dy,d] of [[1,0,1],[-1,0,3],[0,1,2],[0,-1,4]]){if(d===opposite(n.d))continue;const x=n.x+dx,y=n.y+dy;if(x<0||y<0||x>=xs.length||y>=ys.length)continue;const a={x:xs[n.x],y:ys[n.y]},b={x:xs[x],y:ys[y]};if(segmentBlocked(a,b,boxes))continue;
       const g=n.g+Math.abs(a.x-b.x)+Math.abs(a.y-b.y)+(n.d&&d!==n.d?80:0),k=key(x,y,d);if(g>=(dist.get(k)??Infinity))continue;
       dist.set(k,g);parents.set(k,n);q.push({x,y,d,g,k,f:g+Math.abs(b.x-end.x)+Math.abs(b.y-end.y)});
@@ -63,44 +65,66 @@ function route(start,end,boxes,width,height,aSide,bSide) {
   if(!found)throw Error('没有可用的正交通道，请移动遮挡设备或增加画面空间');
   const points=[];for(let n=found;n;n=parents.get(n.k))points.unshift({x:xs[n.x],y:ys[n.y]});return points;
 }
+export function labelBounds(c){return ['tank','pump','motor','valve'].includes(c.kind)&&c.label?{x:c.x-2,y:c.y+c.h-23,r:c.x+c.w+2,b:c.y+c.h+2}:null}
+export function connectionCrossings(edges){
+ const diagnostics=[];
+ for(let i=0;i<edges.length;i++)for(let j=i+1;j<edges.length;j++){
+  const a=edges[i],b=edges[j];if(a.routeStatus!=='ok'||b.routeStatus!=='ok')continue;let overlap=false,cross=null;
+  for(let x=1;x<a.points.length;x++)for(let y=1;y<b.points.length;y++){
+   const p=a.points[x-1],q=a.points[x],r=b.points[y-1],s=b.points[y],ah=p.y===q.y,bh=r.y===s.y;
+   if(ah===bh){if(ah?p.y===r.y&&Math.max(Math.min(p.x,q.x),Math.min(r.x,s.x))<Math.min(Math.max(p.x,q.x),Math.max(r.x,s.x)):p.x===r.x&&Math.max(Math.min(p.y,q.y),Math.min(r.y,s.y))<Math.min(Math.max(p.y,q.y),Math.max(r.y,s.y)))overlap=true;}
+   else{const h=ah?[p,q]:[r,s],v=ah?[r,s]:[p,q];if(v[0].x>Math.min(h[0].x,h[1].x)&&v[0].x<Math.max(h[0].x,h[1].x)&&h[0].y>Math.min(v[0].y,v[1].y)&&h[0].y<Math.max(v[0].y,v[1].y))cross={x:v[0].x,y:h[0].y};}
+  }
+  if(overlap&&((a.from!==b.from&&a.to!==b.to)||(a.from===b.from&&a.to===b.to)))diagnostics.push({code:'route-overlap',connections:[a.id,b.id],message:`管线 ${a.label||a.id} 与 ${b.label||b.id} 共用一段路径，请调整端口或设备位置以明确区分`});
+  else if(cross)diagnostics.push({code:'route-crossing',connections:[a.id,b.id],point:cross,message:`管线 ${a.label||a.id} 与 ${b.label||b.id} 交叉但不连通；留白跨线只表示越过`});
+ }
+ return diagnostics;
+}
 export function routePage(input) {
-  const page=clone(input),nodes=page.components.filter(c=>c.kind!=='flow'),byId=new Map(nodes.map(c=>[c.id,c])),diagnostics=[];
-  page.connections=(page.connections||[]).map(edge=>{
-    const from=byId.get(edge.from),to=byId.get(edge.to);
-    if(!from||!to)throw Error(`连接 ${edge.id} 引用了不存在的组件`);
-    const sides=from.x+from.w<=to.x?['right','left']:to.x+to.w<=from.x?['left','right']:from.y+from.h<=to.y?['bottom','top']:to.y+to.h<=from.y?['top','bottom']:null;
-    const aSide=edge.fromPort||sides?.[0]||'right',bSide=edge.toPort||sides?.[1]||'left';
-    try{
-      if(!sides&&overlaps(rect(from),rect(to)))throw Error('设备重叠，请先移开设备再布线');
-      const a=portAnchor(from,aSide),b=portAnchor(to,bSide),start=escapePort(from,aSide,a),end=escapePort(to,bSide,b),boxes=nodes.map(c=>rect(c,12));
-      const fromOthers=nodes.filter(c=>c.id!==from.id).map(c=>rect(c,12)),toOthers=nodes.filter(c=>c.id!==to.id).map(c=>rect(c,12));
-      // A straight connection has priority, including narrow gaps where fixed stubs overlap.
-      const direct=(a.x===b.x||a.y===b.y)&&facing(a,b,aSide)&&facing(b,a,bSide)&&!segmentBlocked(a,b,nodes.filter(c=>c.id!==from.id&&c.id!==to.id).map(c=>rect(c,12)));
-      if(!direct&&(segmentBlocked(a,start,fromOthers)||segmentBlocked(end,b,toOthers)))throw Error('端口被其他组件遮挡');
-      const simple=direct?[a,b]:simplify([a,...route(start,end,boxes,page.width,page.height,aSide,bSide),b]);
-      const bends=Math.max(0,simple.length-2),dx=simple.at(-1).x-simple.at(-2).x,dy=simple.at(-1).y-simple.at(-2).y;
-      return {...edge,points:simple,resolvedPorts:{from:aSide,to:bSide},routeStatus:'ok',routeError:null,routeInfo:{bends,arrowDirection:Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'bottom':'top'),reason:direct?'端口同轴，直接连接':bends<=2?'端口不同轴，使用居中的正交通道':'绕开设备或标签障碍'}};
-    }catch(e){diagnostics.push({code:'route-blocked',connectionId:edge.id,message:e.message});return {...edge,points:[],routeStatus:'blocked',routeError:e.message};}
-  });return {page,diagnostics};
+ const page=clone(input),nodes=page.components.filter(c=>c.kind!=='flow'),byId=new Map(nodes.map(c=>[c.id,c])),diagnostics=[];
+ page.connections=(page.connections||[]).map(edge=>{
+  const from=byId.get(edge.from),to=byId.get(edge.to);if(!from||!to)throw Error(`连接 ${edge.id} 引用了不存在的组件`);
+  const sides=from.x+from.w<=to.x?['right','left']:to.x+to.w<=from.x?['left','right']:from.y+from.h<=to.y?['bottom','top']:to.y+to.h<=from.y?['top','bottom']:null;
+  const returnSide=(edge.routeMode==='return'||edge.layoutRole==='return')&&(Math.min(from.y,to.y)>=40?'top':Math.max(from.y+from.h,to.y+to.h)<=page.height-40?'bottom':null);
+  const first=[edge.fromPort||returnSide||sides?.[0]||'right',edge.toPort||returnSide||sides?.[1]||'left'];
+  const labels=[labelBounds(from),labelBounds(to)].filter(Boolean),boxes=nodes.map(c=>rect(c,12));
+  function attempt(aSide,bSide){
+   if(!sides&&overlaps(rect(from),rect(to)))throw Error('设备重叠，请先移开设备再布线');
+   const a=portAnchor(from,aSide),b=portAnchor(to,bSide),start=escapePort(from,aSide,a),end=escapePort(to,bSide,b);
+   const direct=(a.x===b.x||a.y===b.y)&&facing(a,b,aSide)&&facing(b,a,bSide)&&!segmentBlocked(a,b,[...labels,...nodes.filter(c=>c.id!==from.id&&c.id!==to.id).map(c=>rect(c,12))]);
+   if(!direct&&(segmentBlocked(a,start,labels)||segmentBlocked(end,b,labels)))throw Error('所选端口通道穿过设备名称，请选择其他端口或自动选择');
+   if(!direct&&(segmentBlocked(a,start,nodes.filter(c=>c.id!==from.id).map(c=>rect(c,12)))||segmentBlocked(end,b,nodes.filter(c=>c.id!==to.id).map(c=>rect(c,12)))))throw Error('端口被其他组件遮挡');
+   const simple=direct?[a,b]:simplify([a,...route(start,end,boxes,page.width,page.height,aSide,bSide),b]);
+   if(simple.some(p=>p.x<0||p.y<0||p.x>page.width||p.y>page.height))throw Error('管线超出画面，请增加设备边距');
+   const bends=Math.max(0,simple.length-2),dx=simple.at(-1).x-simple.at(-2).x,dy=simple.at(-1).y-simple.at(-2).y;
+   return {...edge,points:simple,resolvedPorts:{from:aSide,to:bSide},routeStatus:'ok',routeError:null,routeInfo:{bends,arrowDirection:Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'bottom':'top'),reason:direct?'端口同轴，直接连接':returnSide===aSide&&returnSide===bSide?'循环回流使用外侧通道':bends<=2?'端口不同轴，使用居中的正交通道':'绕开设备或标签障碍'}};
+  }
+  try{return attempt(...first)}catch(initial){
+   let best=null,score=Infinity;
+   if(sides)for(const a of edge.fromPort?[edge.fromPort]:['right','left','top','bottom'])for(const b of edge.toPort?[edge.toPort]:['left','right','top','bottom']){
+    if(a===first[0]&&b===first[1])continue;
+    try{const candidate=attempt(a,b),cost=candidate.routeInfo.bends*80+candidate.points.slice(1).reduce((n,p,i)=>n+Math.abs(p.x-candidate.points[i].x)+Math.abs(p.y-candidate.points[i].y),0);if(cost<score){best=candidate;score=cost}}catch{}
+   }
+   if(best){best.routeInfo.autoPortAdjusted=true;best.routeInfo.reason='默认端口通道受阻，已改用其他端口避开设备或名称';diagnostics.push({code:'port-adjusted',connectionId:edge.id,message:best.routeInfo.reason});return best}
+   diagnostics.push({code:'route-blocked',connectionId:edge.id,message:initial.message});return {...edge,points:[],resolvedPorts:null,routeInfo:null,routeStatus:'blocked',routeError:initial.message};
+  }
+ });diagnostics.push(...connectionCrossings(page.connections));return {page,diagnostics};
 }
 export function optimizePage(input) {
   if(input.components.some(c=>c.kind==='flow'))throw Error('此画面含旧版手绘管线，请先为管线指定起止设备，再整体优化；当前画面保持不变');
   const page=clone(input),connected=new Set((page.connections||[]).flatMap(e=>[e.from,e.to]));
   // Titles, controls and dashboard cards keep their authored regions. Only explicit
   // topology participants move; being unlocked alone does not make a label a device.
-  const movable=page.components.filter(c=>!c.locked&&c.kind!=='flow'&&connected.has(c.id)),ids=new Set(movable.map(c=>c.id)),rank=new Map(),visiting=new Set(),cycles=[];
+  const movable=page.components.filter(c=>!c.locked&&c.kind!=='flow'&&connected.has(c.id)),ids=new Set(movable.map(c=>c.id));
   if(!movable.length)return routePage(page);
-  const incoming=new Map(movable.map(c=>[c.id,[]]));for(const e of page.connections||[])if(ids.has(e.from)&&ids.has(e.to))incoming.get(e.to).push(e.from);
-  function depth(id){if(rank.has(id))return rank.get(id);if(visiting.has(id)){cycles.push(id);return 0}visiting.add(id);const r=Math.min(movable.length,Math.max(0,...incoming.get(id).map(p=>depth(p)+1)));visiting.delete(id);rank.set(id,r);return r}
-  for(const c of movable)depth(c.id);
-  const columns=new Map();for(const c of movable){const r=rank.get(c.id);if(!columns.has(r))columns.set(r,[]);columns.get(r).push(c)}
+  const graph=graphColumns(movable,page.connections||[]);
+  for(const edge of page.connections||[])if(ids.has(edge.from)&&ids.has(edge.to)){if(graph.feedback.includes(edge.id))edge.layoutRole='return';else delete edge.layoutRole;}
   const rowHeight=Math.max(...movable.map(c=>c.h)),local=new Map(movable.map(c=>[c.id,portAnchor({...c,x:0,y:0},'left')]));
   const obstacles=page.components.filter(c=>!ids.has(c.id)&&c.kind!=='flow').map(c=>rect(c,16));
   const baseY=Math.max(48+Math.max(...movable.map(c=>local.get(c.id).y)),Math.min(...movable.map(c=>portAnchor(c,'left').y)));
   let x=Math.max(48,Math.min(...movable.map(c=>c.x)));
-  for(const [,items] of [...columns].sort((a,b)=>a[0]-b[0])){
-    items.sort((a,b)=>a.y-b.y||a.id.localeCompare(b.id));
-    items.forEach((c,row)=>{c.x=x;c.y=round(baseY+row*(rowHeight+64)-local.get(c.id).y)});
+  for(const [,items] of graph.columns){
+    items.forEach(c=>{c.x=x;c.y=round(baseY+graph.rows.get(c.id)*(rowHeight+64)-local.get(c.id).y)});
     x+=Math.ceil((Math.max(...items.map(c=>c.w))+112)/8)*8;
   }
   // Shift the process band together around fixed content, keeping same-row ports aligned.
@@ -112,5 +136,5 @@ export function optimizePage(input) {
   page.height=Math.max(page.height,Math.ceil(Math.max(...movable.map(c=>c.y+c.h))+48));
   if(page.height>2160)throw Error('组件超过单页可用空间，请拆分画面');
   page.width=Math.max(page.width,x);if(page.width>4096)throw Error('流程过长，请拆分画面');
-  const result=routePage(page);if(cycles.length)result.diagnostics.push({code:'cycle-layout',message:'检测到循环，已保留连接并为循环边单独布线',components:[...new Set(cycles)]});return result;
+  const result=routePage(page);if(graph.cycles.length)result.diagnostics.push({code:'cycle-layout',message:'循环内设备按工艺顺序展开，回流使用外侧通道；流向保持从源到目标',components:graph.cycles.flat(),connections:graph.feedback});return result;
 }

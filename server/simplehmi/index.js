@@ -33,7 +33,7 @@ function validate(p){
  for(const pg of p.pages){
   if(pg.connections!==undefined&&(!Array.isArray(pg.connections)||pg.connections.length>300))throw Error('连接数量无效');
   const components=new Set(pg.components.filter(c=>c.kind!=='flow').map(c=>c.id));
-  for(const e of pg.connections||[]){unique(e.id);if(!components.has(e.from)||!components.has(e.to)||e.from===e.to)throw Error('连接端点无效');for(const key of ['fromPort','toPort'])if(e[key]&&!['left','right','top','bottom'].includes(e[key]))throw Error('连接端口无效');if(e.tagId&&!tagIds.has(e.tagId))throw Error('连接变量不存在');if(e.points&&(!Array.isArray(e.points)||e.points.length>2000||e.points.some(pt=>!pt||![pt.x,pt.y].every(Number.isFinite))))throw Error('连接路径格式无效');}
+  for(const e of pg.connections||[]){unique(e.id);if(e.routeMode!==undefined&&!['auto','return'].includes(e.routeMode))throw Error('连接布线方式无效');if(e.label!==undefined&&(typeof e.label!=='string'||e.label.length>80))throw Error('管线名称无效');if(!components.has(e.from)||!components.has(e.to)||e.from===e.to)throw Error('连接端点无效');for(const key of ['fromPort','toPort'])if(e[key]&&!['left','right','top','bottom'].includes(e[key]))throw Error('连接端口无效');if(e.tagId&&!tagIds.has(e.tagId))throw Error('连接变量不存在');if(e.points&&(!Array.isArray(e.points)||e.points.length>2000||e.points.some(pt=>!pt||![pt.x,pt.y].every(Number.isFinite))))throw Error('连接路径格式无效');}
  }
  validateKnowledge(p,unique);
  validateControl(p,unique);

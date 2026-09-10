@@ -3,8 +3,14 @@ import {assessmentMarkup} from './knowledge-panel.mjs';
 import {waterDemo} from './water-demo.mjs';
 import {aiPanelMarkup,connectAiPanel} from './ai-panel.mjs';
 const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function connectionMarkup(page){
- return `<svg class="connections-layer" width="${page.width}" height="${page.height}" viewBox="0 0 ${page.width} ${page.height}" aria-hidden="true"><defs><marker id="connection-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#62686e"/></marker></defs>${(page.connections||[]).map(e=>e.routeStatus==='ok'?`<polyline data-connection="${escape(e.id)}" points="${e.points.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#62686e" stroke-width="3" stroke-linejoin="round" marker-end="url(#connection-arrow)"/>`:'').join('')}</svg>`;
+export function connectionFlowState(edge,values,tags,runtime,now=Date.now()){
+ if(!runtime||!edge.tagId)return 'static';const tag=tags.find(t=>t.id===edge.tagId),v=values[edge.tagId];
+ if(tag?.type!=='Bool')return 'static';
+ if(!v||v.quality!=='good'||![true,false,0,1].includes(v.value)||!Number.isFinite(v.ts)||v.ts>now+1000||now-v.ts>Math.max(3500,(tag.polling||1000)*3))return 'stale';
+ return Number(v.value)===1?'flowing':'stopped';
+}
+export function connectionMarkup(page,{interactive=false}={}){
+ return `<svg class="connections-layer" width="${page.width}" height="${page.height}" viewBox="0 0 ${page.width} ${page.height}" ${interactive?'aria-label="设备连接，可点击编辑"':'aria-hidden="true"'}><defs><marker id="connection-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#62686e"/></marker></defs>${(page.connections||[]).map(e=>{if(e.routeStatus!=='ok')return '';const points=e.points.map(p=>`${p.x},${p.y}`).join(' '),label=e.label||`${e.from} → ${e.to}`;return `<polyline points="${points}" fill="none" stroke="${escape(page.background||'#ffffff')}" stroke-width="7" stroke-linejoin="round"/><polyline data-connection="${escape(e.id)}" points="${points}" fill="none" stroke="#62686e" stroke-width="3" stroke-linejoin="round" marker-end="url(#connection-arrow)"/>${interactive?`<g class="connection-hit" data-edit-connection="${escape(e.id)}" role="button" tabindex="0" aria-label="编辑管线：${escape(label)}"><title>${escape(label)} · 点击编辑流向</title><polyline class="connection-hit-line" points="${points}" fill="none" stroke="transparent" stroke-width="16"/>${e.points.slice(1).map((p,i)=>{const a=e.points[i];return `<rect x="${Math.min(a.x,p.x)-8}" y="${Math.min(a.y,p.y)-8}" width="${Math.max(16,Math.abs(a.x-p.x)+16)}" height="${Math.max(16,Math.abs(a.y-p.y)+16)}" fill="transparent" stroke="none"/>`}).join('')}</g>`:''}`}).join('')}</svg>`;
 }
 export async function openAgentStudio({api,dialog,save,project,pageId,accept,toast,openKnowledge}){
  try{await save();const current=await api('/agent/state');let preview=null;

@@ -9,7 +9,7 @@ const tag = object({id,name:string,address:{type:'integer',minimum:1,maximum:655
 const device = object({id,name:string,protocol:{enum:['sim','ModbusTCP']},host:string,port:{type:'integer',minimum:1,maximum:65535},unitId:{type:'integer',minimum:0,maximum:247},polling:{type:'number',minimum:250,maximum:60000},timeout:{type:'number',minimum:500,maximum:10000},tags:list(ref('tag'),200)},undefined,true);
 const port = object({x:{type:'number',minimum:0,maximum:1},y:{type:'number',minimum:0,maximum:1}});
 const component = object({id,kind:{enum:['text','number','button','switch','lamp','motor','pump','valve','tank','pipe','chart','history','alarm','gauge','symbol','equipment','flow','process-status']},label:string,x:num,y:num,w:num,h:num,tagId:id,valueTag:id,color:string,fontSize:num,min:num,max:num,locked:bool,ports:object({left:port,right:port,top:port,bottom:port},[])},['id','kind','x','y','w','h'],true);
-const connection = object({id,from:id,to:id,fromPort:{enum:['left','right','top','bottom']},toPort:{enum:['left','right','top','bottom']},tagId:id},['id','from','to'],true);
+const connection = object({id,from:id,to:id,label:{type:'string',maxLength:80},routeMode:{enum:['auto','return']},fromPort:{enum:['left','right','top','bottom']},toPort:{enum:['left','right','top','bottom']},tagId:id},['id','from','to'],true);
 const page = object({id,name:string,width:{type:'number',minimum:320,maximum:4096},height:{type:'number',minimum:240,maximum:2160},background:string,components:list(ref('component'),300),connections:list(ref('connection'),300)},['id','name','width','height','components'],true);
 const asset=object({id,name:string,svgData:string},undefined,true);
 const guard=object({tagId:id,op:{enum:['lt','lte','gt','gte','eq','ne']},value:num});
@@ -34,7 +34,7 @@ const systemPrompt = `你是 FlexHMI 中文工业组态工程设计助手。仅�
 删除变量会解除显示和动作绑定，并停用依赖该变量的控制规则；删除组件会移除关联连接。修改后的工程会校验、计算依赖与布线并展示给用户。不要伪造 expectedRevision、actor 或计划状态。
 画面白底、深灰组件(#343c43)、中文清晰标签、留白。新画面建议1280x720；组件不能重叠或超出画面。工业设备使用 tank/pump/valve/motor；number/chart/history展示变量；设备 Bool 表示运行。新增 sim 标签明确 initial、sim 和 writable，手动模拟值才可保持写入。
 模拟信号必须与物理过程区分。普通 sim.wave 只是独立信号波动，不存在物料守恒或设备因果关系；不得称为真实工艺仿真。双水箱封闭输送可用工程 simulation="water-transfer"：原水箱5m³初始65%，高位水箱3m³初始30%，泵36m³/h，源低于等于5%或目标高于等于95%停泵。需要 sim 设备，tag ID source_level/destination_level 分别绑定两水箱，pump_command 为 Bool 可写手动启停命令，pump_running 为 Bool 只读反馈；transfer_flow/total_volume/source_volume/destination_volume 为 Float32只读。source_low/destination_high 为 Bool只读报警。不能复用同一液位变量绑定两个实际不同水箱。所有模拟初始值和边界按此内置模型固定，不要宣称任意工艺已具备联动模型。需要其他物理模型时明确列出待实现部分。
-连接使用 connections 的 from/to 组件ID，from代表源，to代表目标。根据物理流程决定流向，不要随机指定端口或 points。服务端自动定位可见端口并优先直连，不能把 flow 手绘管线用作新连接。新建工艺页面在最后添加 page.optimize；图表仪表板人工安排分区，不要整页强制拓扑排列。旧页面有 flow 时勿整体 optimize。
+连接使用 connections 的 from/to 组件ID，from代表源，to代表目标。根据物理流程决定流向，不要随机指定端口或 points。循环回流可用 routeMode=return 指定外侧通道；自动优化会识别环并展开设备。分支按上游连接排序；管线交叉不意味着连通。服务端自动定位可见端口并优先直连，不能把 flow 手绘管线用作新连接。新建工艺页面在最后添加 page.optimize；图表仪表板人工安排分区，不要整页强制拓扑排列。旧页面有 flow 时勿整体 optimize。
 完整对象必须包含定义的必需字段。upsert 合并已有对象，新增对象仍必须完整。只改实际需求涉及的字段，保留其他对象。工程最多20设备、30画面、每页300组件；大型需求分阶段。
 以下是输出契约；新增对象的完整字段参见 definitions，upsert 允许部分更新：\n${JSON.stringify(planSchema)}`;
 module.exports={planSchema,systemPrompt};

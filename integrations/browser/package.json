@@ -1,0 +1,8 @@
+{
+  "name": "flexhmi-browser-acceptance",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {"test": "node ../../scripts/browser/acceptance.cjs"},
+  "dependencies": {"playwright-core": "1.56.1"}
+}

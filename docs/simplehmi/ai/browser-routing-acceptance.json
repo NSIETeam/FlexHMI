@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "browser": "headless Chrome",
+  "isolatedData": true,
+  "connectionEditing": true,
+  "canvasHitTarget": true,
+  "reverseArrow": true,
+  "deleteUndo": true,
+  "returnRoute": true,
+  "persistReload": true,
+  "runtimeHidesEditing": true,
+  "runtimeFlowReflectsPump": true,
+  "mcpConfiguration": true,
+  "savedProjectPreviewApply": true,
+  "narrowDialog": true,
+  "desktopInteractiveTested": false
+}

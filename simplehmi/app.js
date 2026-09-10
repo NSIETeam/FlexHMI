@@ -1,6 +1,7 @@
+import {openConnectionEditor} from './connection-editor.mjs';
 import {openKnowledgePanel} from './knowledge-panel.mjs';
 import {openControlPanel} from './control-panel.mjs';
-import { openAgentStudio, connectionMarkup } from "./agent-studio.mjs";
+import { openAgentStudio, connectionMarkup, connectionFlowState } from "./agent-studio.mjs";
 import { routePage } from "./topology.mjs";
 import { sanitizeSvg } from "./svg-import.mjs";
 import { arrange, snapMove, bounds } from "./layout.mjs";
@@ -158,7 +159,7 @@ const selectOnly = (id) => {
 const selected = () => page().components.find((c) => c.id === state.selected);
 const tags = () =>
   state.project.devices.flatMap((d) =>
-    d.tags.map((t) => ({ ...t, device: d.name, protocol: d.protocol })),
+    d.tags.map((t) => ({ ...t, device: d.name, protocol: d.protocol, polling:d.polling })),
   );
 const tag = (id) => tags().find((t) => t.id === id);
 const val = (c) =>
@@ -271,7 +272,7 @@ function render() {
   }
   $("#app").innerHTML =
     `<header class="topbar"><div class="brand"><span class="brand-mark">${icon("logo")}</span><span class="brand-wordmark">Flex<b>HMI</b></span></div><nav class="nav" aria-label="主导航"><button id="nav-project">项目</button><button id="nav-devices">设备</button><button id="nav-screen" class="active">画面</button></nav><div class="top-name">${esc(state.project.name)}</div><span id="save-state" class="save-status"></span><button class="primary top-run" id="run">${icon("play")}运行</button></header>
- <div class="subbar"><div class="breadcrumb">${icon("folder")}<span>${esc(state.project.name)}</span>${icon("chevron")}<strong>${esc(page().name)}</strong></div><button id="undo" title="撤销 ⌘Z" aria-label="撤销" ${!state.undo.length ? "disabled" : ""}>${icon("undo")}</button><button id="redo" title="重做 ⌘⇧Z" aria-label="重做" ${!state.redo.length ? "disabled" : ""}>${icon("redo")}</button><span class="divider"></span><button id="duplicate" title="复制组件 ⌘D" aria-label="复制组件">${icon("copy")}</button><button id="remove" title="删除组件" aria-label="删除组件">${icon("trash")}</button><span class="divider"></span><button id="arrange-tools" title="对齐与分布">${icon("grid")}<span>对齐</span></button><button id="snap-toggle" aria-pressed="${state.snap}" title="拖动时吸附网格和参考线">${icon("link")}<span>吸附</span></button><button id="control-panel" title="控制规则与人工接管">${icon("switch")}控制</button><button id="ai-studio">${icon("screen")}<span>AI 工作台</span></button><button id="engineer" aria-label="工程师模式" title="工程师模式">${icon("settings")}<span style="font-size:12px">工程师模式</span></button></div>
+ <div class="subbar"><div class="breadcrumb">${icon("folder")}<span>${esc(state.project.name)}</span>${icon("chevron")}<strong>${esc(page().name)}</strong></div><button id="undo" title="撤销 ⌘Z" aria-label="撤销" ${!state.undo.length ? "disabled" : ""}>${icon("undo")}</button><button id="redo" title="重做 ⌘⇧Z" aria-label="重做" ${!state.redo.length ? "disabled" : ""}>${icon("redo")}</button><span class="divider"></span><button id="duplicate" title="复制组件 ⌘D" aria-label="复制组件">${icon("copy")}</button><button id="remove" title="删除组件" aria-label="删除组件">${icon("trash")}</button><span class="divider"></span><button id="arrange-tools" title="对齐与分布">${icon("grid")}<span>对齐</span></button><button id="snap-toggle" aria-pressed="${state.snap}" title="拖动时吸附网格和参考线">${icon("link")}<span>吸附</span></button><button id="connection-tools" title="连接设备并编辑流向">${icon("link")}连接</button><button id="control-panel" title="控制规则与人工接管">${icon("switch")}控制</button><button id="ai-studio">${icon("screen")}<span>AI 工作台</span></button><button id="engineer" aria-label="工程师模式" title="工程师模式">${icon("settings")}<span style="font-size:12px">工程师模式</span></button></div>
  <main class="workspace"><aside class="left-panel"><div class="panel-tabs"><button data-tab="components" class="${state.tab === "components" ? "active" : ""}">组件</button><button data-tab="devices" class="${state.tab === "devices" ? "active" : ""}">设备变量</button><button data-tab="layers" class="${state.tab === "layers" ? "active" : ""}">图层</button></div><div id="left-content"></div></aside><section class="center"><div class="stage-area" id="stage"><div class="canvas-wrap" id="canvas-wrap"><div class="canvas" id="canvas" aria-label="HMI 画布"></div></div></div><div class="page-bar" id="pages"></div></section><aside class="right-panel" id="properties"></aside></main>
  <footer class="footer"><span class="dot" id="connection-dot"></span><span id="connection-text">正在连接 Runtime</span><span class="spacer"></span><span id="object-count"></span><span style="margin:0 10px;color:#d7dfeb">|</span><span>${page().width} × ${page().height}</span><button id="zoom-minus" aria-label="缩小">−</button><button id="zoom-fit" style="min-width:47px">适应</button><button id="zoom-plus" aria-label="放大">＋</button></footer>`;
   $("#nav-project").onclick = projectDialog;
@@ -287,6 +288,7 @@ function render() {
   $("#remove").onclick = removeSelected;
   $("#engineer").onclick = engineerDialog;
   $("#arrange-tools").onclick = arrangeDialog;
+  $("#connection-tools").onclick=()=>connectionDialog();
   $("#control-panel").onclick=controlDialog;
   $("#ai-studio").onclick=()=>openAgentStudio({api,dialog,save,openKnowledge:knowledgeDialog,project:state.project,pageId:page().id,toast,accept:async p=>{snapshot();state.project=p;selectOnly(null);state.saved=true;render();}});
   $("#snap-toggle").onclick = () => {
@@ -528,7 +530,7 @@ function renderCanvas() {
     state.project.simulation === "waste-to-energy",
   );
   canvas.classList.toggle("grid-on", state.grid && !state.runtime);
-  canvas.innerHTML = connectionMarkup(page()) +
+  canvas.innerHTML = connectionMarkup(page(),{interactive:!state.runtime}) +
     (page().components.length
       ? ""
       : `<div class="canvas-empty">${icon("screen")}<strong>你的第一张工控画面</strong><span>从左侧拖入组件，或切换到设备变量直接拖入</span></div>`) +
@@ -575,6 +577,11 @@ function renderCanvas() {
       };
     } else el.onpointerdown = (e) => dragStart(e, el);
   });
+  if(!state.runtime)for(const line of canvas.querySelectorAll('[data-edit-connection]')){
+    line.onpointerdown=e=>{e.preventDefault();e.stopPropagation()};line.onclick=e=>{e.stopPropagation();connectionDialog(line.dataset.editConnection)};
+    line.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();connectionDialog(line.dataset.editConnection)}};
+  }
+  updateConnectionStates();
   updateCount();
   requestAnimationFrame(fit);
 }
@@ -854,7 +861,7 @@ function componentContent(c) {
             0,
             Math.min(100, ((v - (c.min ?? 0)) / ((c.max ?? 100) - (c.min ?? 0) || 100)) * 100),
           );
-    return `<div class="industrial"><svg viewBox="0 0 160 200"><defs><clipPath id="clip-${c.id}"><rect x="27" y="21" width="106" height="148" rx="11"/></clipPath></defs><rect x="27" y="21" width="106" height="148" rx="11" fill="#f9fafb" stroke="#aeb6bd" stroke-width="2"/><g clip-path="url(#clip-${c.id})"><rect x="28" y="${168 - fill * 1.38}" width="104" height="${fill * 1.38}" fill="${color}22"/><path d="M28 ${168 - fill * 1.38}h104" stroke="${color}" stroke-width="2"/></g><ellipse cx="80" cy="21" rx="53" ry="12" fill="#f9fafb" stroke="#aeb6bd" stroke-width="2"/><path d="M37 171v16M123 171v16M28 187h22M111 187h22" stroke="#b4bdc5" stroke-width="3"/><path d="M141 39h7M141 65h7M141 91h7M141 117h7M141 143h7" stroke="#bec5cc"/><text x="80" y="108" text-anchor="middle" fill="#343c43" font-size="22" font-family="sans-serif">${fmt(v)}${u}</text></svg><span class="industrial-label">${label}</span></div>`;
+    return `<div class="industrial"><svg viewBox="0 0 160 200"><defs><clipPath id="clip-${c.id}"><rect x="27" y="21" width="106" height="148" rx="11"/></clipPath></defs><rect x="27" y="21" width="106" height="148" rx="11" fill="#f9fafb" stroke="#aeb6bd" stroke-width="2"/><g clip-path="url(#clip-${c.id})"><rect x="28" y="${168 - fill * 1.38}" width="104" height="${fill * 1.38}" fill="${color}22"/><path d="M28 ${168 - fill * 1.38}h104" stroke="${color}" stroke-width="2"/></g><ellipse cx="80" cy="21" rx="53" ry="12" fill="#f9fafb" stroke="#aeb6bd" stroke-width="2"/><path d="M37 171v16M123 171v16M28 187h22M111 187h22" stroke="#b4bdc5" stroke-width="3"/><path d="M141 39h7M141 65h7M141 91h7M141 117h7M141 143h7" stroke="#bec5cc"/><text x="80" y="108" text-anchor="middle" fill="#343c43" font-size="22" font-family="sans-serif">${fmt(v)}${u}</text></svg><span class="industrial-label" title="${label}">${label}</span></div>`;
   }
   if (["pump", "motor", "valve"].includes(c.kind)) {
     const stroke = on ? color : "#9ba4ad";
@@ -865,7 +872,7 @@ function componentContent(c) {
       shape = `<rect x="23" y="26" width="65" height="52" rx="7" fill="${on ? "#f2f4f5" : "#f4f5f6"}" stroke="${stroke}" stroke-width="2"/><path d="M34 32v40M45 32v40M56 32v40M67 32v40M88 48h14v12H88M23 45H10v16h13M28 86h57" stroke="${stroke}" stroke-width="2"/><rect x="41" y="15" width="27" height="11" rx="2" fill="#e3e7eb" stroke="${stroke}"/>`;
     if (c.kind === "valve")
       shape = `<path d="M20 36v39l71-39v39Z" fill="${on ? "#f2f4f5" : "#f4f5f6"}" stroke="${stroke}" stroke-width="2"/><path d="M55 53V20M36 20h39M13 34v43M98 34v43" stroke="${stroke}" stroke-width="3"/>`;
-    return `<div class="industrial"><svg viewBox="0 0 112 94">${shape}</svg><span class="industrial-label">${label}</span></div>`;
+    return `<div class="industrial"><svg viewBox="0 0 112 94">${shape}</svg><span class="industrial-label" title="${label}">${label}</span></div>`;
   }
   if (c.kind === "chart" || c.kind === "history") {
     const points = (state.history[c.tagId] || []).slice(
@@ -891,7 +898,7 @@ function componentContent(c) {
       v == null
         ? 0
         : Math.max(0, Math.min(1, (v - (c.min ?? 0)) / ((c.max ?? 100) - (c.min ?? 0) || 100)));
-    return `<div class="industrial"><svg viewBox="0 0 210 140"><path d="M30 110A75 75 0 0 1 180 110" fill="none" stroke="#e7eaed" stroke-width="13" stroke-linecap="round"/><path d="M30 110A75 75 0 0 1 180 110" fill="none" stroke="${color}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${ratio * 236} 236"/><text x="105" y="104" text-anchor="middle" font-size="29" fill="#343c43">${fmt(v)}${u}</text><text x="27" y="135" font-size="11" fill="#959da5">${c.min}</text><text x="167" y="135" font-size="11" fill="#959da5">${c.max}</text></svg><span class="industrial-label">${label}</span></div>`;
+    return `<div class="industrial"><svg viewBox="0 0 210 140"><path d="M30 110A75 75 0 0 1 180 110" fill="none" stroke="#e7eaed" stroke-width="13" stroke-linecap="round"/><path d="M30 110A75 75 0 0 1 180 110" fill="none" stroke="${color}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${ratio * 236} 236"/><text x="105" y="104" text-anchor="middle" font-size="29" fill="#343c43">${fmt(v)}${u}</text><text x="27" y="135" font-size="11" fill="#959da5">${c.min}</text><text x="167" y="135" font-size="11" fill="#959da5">${c.max}</text></svg><span class="industrial-label" title="${label}">${label}</span></div>`;
   }
   return "";
 }
@@ -1086,6 +1093,7 @@ async function setRuntime(on) {
   history.replaceState(null, "", url);
   render();
 }
+function connectionDialog(edgeId){return openConnectionEditor({page:page(),tags:tags(),selectedIds:state.selection,edgeId,uid,dialog,toast,apply:p=>{snapshot();page().connections=p.connections;changed();render();}})}
 function knowledgeDialog(){return openKnowledgePanel({api,dialog,save,toast,accept:async p=>{snapshot();state.project=p;state.saved=true;render();}})}
 function controlDialog(){return openControlPanel({api,dialog,save,toast,accept:async p=>{snapshot();state.project=p;state.saved=true;render();}})}
 function renderRuntime() {
@@ -1533,7 +1541,11 @@ async function engineerDialog() {
       )}</div><p class="hint">设备与变量使用同一个运行引擎。极简画面单独保存，暂不与原编辑器的 SVG 画面双向转换。由极简模式管理的设备，请在本界面修改，以免下次同步覆盖高级配置。</p>`,
   );
 }
+function updateConnectionStates(){
+ const entries=tags();for(const line of document.querySelectorAll('[data-connection]')){const e=page().connections?.find(e=>e.id===line.dataset.connection);if(!e)continue;const flow=connectionFlowState(e,state.values,entries,state.runtime);line.classList.toggle('connection-flowing',flow==='flowing');line.classList.toggle('connection-stale',flow==='stale');line.dataset.flow=flow;}
+}
 function updateStatus() {
+  updateConnectionStates();
   if($("#runtime-control")){const c=state.control;$("#runtime-control").textContent=c?.state==='automatic'?'自动：运行中':c?.state==='fault'?'自动：已中止':c?.state==='unknown'?'控制状态未知':'自动控制';$("#runtime-control").title=c?.reason||'控制规则与人工接管';}
   const connected = Object.values(state.devices).filter(
       (d) => d.connected,
@@ -1566,6 +1578,7 @@ function updateStatus() {
   );
 }
 async function poll() {
+  if(state.project)updateConnectionStates();
   if (state.polling || !state.project) return;
   state.polling = true;
   const rev = state.revision;

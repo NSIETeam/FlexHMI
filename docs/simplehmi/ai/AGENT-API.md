@@ -34,7 +34,7 @@
 | page.delete | id | 删除页面；至少保留一页 |
 | component.upsert | pageId, component | 新增/合并组件；绑定仍使用 tagId |
 | component.delete | pageId, id | 删除组件，并自动删除关联连接 |
-| connection.upsert | pageId, connection | 新增/合并 `{id,from,to,fromPort?,toPort?,tagId?}` |
+| connection.upsert | pageId, connection | 新增/合并 `{id,from,to,label?,fromPort?,toPort?,routeMode?,tagId?}` |
 | connection.delete | pageId, id | 删除连接 |
 | asset.upsert | asset | 项目自定义 SVG；使用前端已清理的 svgData 数据 URI |
 | asset.delete | id | 删除资产；仍被组件引用时阻止并提示 |
@@ -88,3 +88,12 @@
 ```
 
 删除保留在工程目录 `trash/`，当前不提供永久清空工具。目标仍是当前工程时拒绝删除/恢复覆盖。所有文件操作都纳入串行应用与持久化审计；归档/恢复不调用运行引擎激活。其他编辑窗口尚未提交的内容不会被 Agent 保存，旧窗口的后续保存会由版本冲突保护。
+
+
+## 循环与连接诊断
+
+`routeMode: "return"` 请求外侧回流通道；未指定时按几何关系选择。`page.optimize` 先将有向环压缩为分组再展开顺序，保留原始 from/to 语义，给回流边设置派生 `layoutRole`。分支按已排列上游的行序排序；不会把未连接的标题、数据卡片强行排入设备列。
+
+自动端口被组件或名称遮挡时可以改选其他侧，并返回 `port-adjusted` 和 `routeInfo.autoPortAdjusted`。用户明确指定的端口不被替换。没有可用路径时仍返回 `route-blocked` 阻止计划应用。`route-crossing` 提示几何交叉而非工艺连通，`route-overlap` 提示需要区分的共线路径；这两项为可审阅诊断，不会伪造新的连接节点。名称区域按单行排版参与避让。
+
+管线 `tagId` 绑定 Bool 时可驱动运行页流动显示；仅接受新鲜的 true/1，false/0 停止，失效显示未知。其他类型保留兼容绑定但不被误当成流动。图形连接不会自动改变过程模型或控制规则。
