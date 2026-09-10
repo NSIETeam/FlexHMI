@@ -22,13 +22,18 @@ AI 工作台支持三种模式、生成计划、引用知识评估、关联影�
 
 ## 立即启动
 
-本次交付目录已安装依赖并完成构建，直接运行：
+从 GitHub 首次获取源码后，安装后端依赖并启动（需要 Node.js 22 或更高版本）：
 
 ```sh
+git clone https://github.com/NSIETeam/FlexHMI.git
+cd FlexHMI
+npm ci --prefix server
 npm start
 ```
 
-打开 **http://127.0.0.1:1881/simplehmi/**。macOS 也可以双击 **Start-SimpleHMI.command**，启动就绪后自动打开浏览器。首次启动默认显示带实时模拟数据的循环供水工程。
+私有仓库需先登录有访问权限的 GitHub 账号。已经安装过依赖的本地目录，直接运行 `npm start`。预编译工程师界面包含在仓库内，普通启动不需要安装 Angular 开发依赖。
+
+打开 **http://127.0.0.1:1881/simplehmi/**。macOS 也可以双击 **Start-SimpleHMI.command**，启动就绪后自动打开浏览器。首次启动默认显示带实时模拟数据的守恒双水箱供水工程。
 
 从演示包解压后启动：
 
