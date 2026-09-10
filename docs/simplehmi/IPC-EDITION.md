@@ -1,4 +1,4 @@
-# FlexHMI 0.3.0 工控机候选版
+# FlexHMI 0.4.0 工控机预览版
 
 ## 安装和使用
 
@@ -27,9 +27,13 @@ Microsoft Edge 全屏参数依据：[官方 kiosk 文档](https://learn.microsof
 
 ## 构建与验收边界
 
-运行 `python3 scripts/windows/build-ipc.py --help` 获取参数。脚本使用已下载校验的 Windows Node 22.23.2、各架构原生依赖、LLVM MinGW 和 NSIS 缓存，不联网下载，不复用旧 UI。输出安装包、每个架构原生模块检查与 SHA-256 清单。
+运行 `python3 scripts/windows/build-ipc.py --help` 获取参数。先提交源码；脚本只打包 Git 已跟踪的项目文件，使用已校验的 Windows Node 22.23.2、各架构原生依赖和 LLVM MinGW 缓存，输出载荷 ZIP 与源码/依赖来源清单。依赖缓存必须与当前 server/package-lock.json 一致。0.4.0 包含 MCP 及其依赖；仅保留运行所需的 Node.exe 和许可证，不附带 npm 开发工具。
 
-构建机器是 macOS ARM64。已完成源码检查、Angular 构建、本机后端/模拟/Modbus 测试从站回归，以及启动器单实例、认证、就绪、窗口请求和停止子进程测试。PE 架构检查不能代替 Windows 安装运行验收。安装包未签名，尚未完成 Windows x64 / ARM64 实机安装、Edge 启动、中文路径、卸载和串口硬件测试。
+把两个 Payload.zip 和 payloads.json 上传到候选草稿后，执行 **Windows source release qualification** 工作流。它验证载荷哈希、源码提交和每个项目文件，再在 Windows 上用匹配的 NSIS 编译器/插件生成安装器并验收。不要使用旧的 macOS NSIS 编译器与 Windows 插件混用路线；0.3.0 旧安装器曾由此产生启动崩溃。
+
+0.3.0 载荷经 Windows 原生重建后，x64/ARM64 均通过中文路径安装、原生 SQLite/串口绑定、Edge 渲染、模拟守恒/启停、单实例、保存恢复、覆盖安装、卸载保留数据测试（运行 34490584866）。0.4.0 新源码包需独立验收；增加已安装源码完整性、内置 MCP 23 工具、IPC 自动发现及回流布线检查。发布说明和校验清单注明具体通过的源码与包哈希，不能将旧包测试结果套到新包。
+
+安装包未签名。测试机验证不等于客户现场验证；物理 PLC、串口设备、Windows 10 以及工控机的实际配置需要现场确认。
 
 Windows 验收：先执行包内 desktop/verify-runtime.ps1 检查架构、SQLite、串口绑定，再打开编辑→创建工程→供水示例→启停→保存→停止服务→重新打开；核对数据持久化、控制不自动恢复、全屏和卸载保留工程。物理设备需按 README 完成地址、字节序、权限和 PLC 联锁核验。
 

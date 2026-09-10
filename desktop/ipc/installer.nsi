@@ -1,26 +1,29 @@
 Unicode true
+!ifndef VERSION
+ !define VERSION "0.3.0"
+!endif
 !ifndef PAYLOADGLOB
  !define PAYLOADGLOB "${PAYLOAD}/*"
 !endif
 !include "MUI2.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
-Name "FlexHMI 工控机版 0.3.0 (${ARCH})"
+Name "FlexHMI 工控机版 ${VERSION} (${ARCH})"
 OutFile "${OUTPUT}"
 InstallDir "$LOCALAPPDATA\Programs\FlexHMI-IPC"
 InstallDirRegKey HKCU "Software\FlexHMI-IPC" "InstallDir"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 BrandingText "FlexHMI · 工业可视化，从此简单"
-VIProductVersion "0.3.0.0"
+VIProductVersion "${VERSION}.0"
 VIAddVersionKey /LANG=2052 "ProductName" "FlexHMI IPC"
 VIAddVersionKey /LANG=2052 "FileDescription" "FlexHMI 工控机版 Windows ${ARCH}"
-VIAddVersionKey /LANG=2052 "FileVersion" "0.3.0"
+VIAddVersionKey /LANG=2052 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=2052 "LegalCopyright" "FlexHMI contributors; engine copyright FUXA contributors"
 !define MUI_ICON "${ICON}"
 !define MUI_UNICON "${ICON}"
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TEXT "FlexHMI 工控机版使用本机 Microsoft Edge 显示界面，内置离线编辑器和通讯运行环境。$\r$\n$\r$\n需要 64 位 Windows 10 / 11 和 Microsoft Edge。无需单独安装 Node.js。$\r$\n$\r$\n关闭画面后采集与已授权控制继续运行；使用开始菜单的停止服务入口结束本地服务。重启不会自动授权控制。$\r$\n$\r$\n未签名候选版，尚待 Windows 实机验收。"
+!define MUI_WELCOMEPAGE_TEXT "FlexHMI 工控机版使用本机 Microsoft Edge 显示界面，内置离线编辑器和通讯运行环境。$\r$\n$\r$\n需要 64 位 Windows 10 / 11 和 Microsoft Edge。无需单独安装 Node.js。$\r$\n$\r$\n关闭画面后采集与已授权控制继续运行；使用开始菜单的停止服务入口结束本地服务。重启不会自动授权控制。$\r$\n$\r$\n未签名预览版。连接现场设备前，请验证通讯、联锁与控制参数。"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${LICENSEFILE}"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -60,7 +63,7 @@ Section "FlexHMI" SecMain
  WriteUninstaller "$INSTDIR\Uninstall.exe"
  WriteRegStr HKCU "Software\FlexHMI-IPC" "InstallDir" "$INSTDIR"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayName" "FlexHMI 工控机版 (${ARCH})"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayVersion" "0.3.0"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayVersion" "${VERSION}"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayIcon" "$INSTDIR\FlexHMI.exe"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "NoModify" 1

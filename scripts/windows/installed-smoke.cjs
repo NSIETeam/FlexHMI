@@ -3,11 +3,29 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const [root,artifacts,arch,phase]=process.argv.slice(2),{configuration,request}=require(path.join(root,'desktop/ipc/launcher.cjs'));
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const {pathToFileURL}=require('node:url'),{createHash}=require('node:crypto');
 (async()=>{
  assert.equal(process.platform,'win32');assert.equal(process.arch,arch);const c=configuration(root),service=await request(c,'status');assert.equal(service.ready,true);
  async function api(route,body){const res=await fetch(service.origin+'/simplehmi/api/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});const data=await res.json();assert.equal(res.ok,true,JSON.stringify(data));return data}
  const snapshot=await api('agent/state'),name='Windows '+arch+' 保存重开验收';assert.ok(snapshot.project.devices.every(d=>d.protocol==='sim'),'Smoke test must never use physical devices');
  if(phase==='exercise'){
+  const provenanceFile=path.join(root,'build-provenance.json');
+  if(fs.existsSync(provenanceFile)){
+   const provenance=JSON.parse(fs.readFileSync(provenanceFile));assert.equal(provenance.arch,arch);assert.equal(provenance.mcpIncluded,true);
+   for(const [file,hash] of Object.entries(provenance.sourceFiles)){assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex'),hash,'Installed source differs: '+file)}
+   const config=await api('agent/mcp-config');assert.equal(config.installed,true);assert.equal(config.configuration.mcpServers.flexhmi.command,process.execPath);
+   const sdk=path.join(root,'integrations/mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client');
+   const {Client}=await import(pathToFileURL(path.join(sdk,'index.js'))),{StdioClientTransport}=await import(pathToFileURL(path.join(sdk,'stdio.js')));
+   const client=new Client({name:'installed-windows-acceptance',version:'1.0.0'});
+   // Deliberately omit FLEXHMI_URL to test installed IPC controller discovery.
+   const env={...process.env,FLEXHMI_ACCESS:'full',FLEXHMI_PHYSICAL_WRITES:'0'};delete env.FLEXHMI_URL;
+   const transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'integrations/mcp/server.mjs')],env,stderr:'pipe'});
+   try{await client.connect(transport);assert.equal((await client.listTools()).tools.length,23);const state=await client.callTool({name:'flexhmi_state',arguments:{}});assert.notEqual(state.isError,true);assert.equal(state.structuredContent.project.id,snapshot.project.id)}finally{await client.close()}
+   const {routePage}=await import(pathToFileURL(path.join(root,'simplehmi/topology.mjs')));
+   const routed=routePage({id:'ci',name:'布线验收',width:1000,height:600,components:[{id:'a',kind:'pump',label:'a',x:100,y:160,w:120,h:120},{id:'b',kind:'pump',label:'b',x:620,y:160,w:120,h:120}],connections:[{id:'return',from:'b',to:'a',fromPort:'top',toPort:'top'}]});assert.equal(routed.page.connections[0].routeInfo.bends,2);assert.equal(routed.page.connections[0].routeInfo.arrowDirection,'bottom');
+   const connectionSource=await fetch(service.origin+'/simplehmi/connection-editor.mjs');assert.equal(connectionSource.ok,true);assert.match(await connectionSource.text(),/connectionDraft/);
+   fs.writeFileSync(path.join(artifacts,'latest-features.json'),JSON.stringify({sourceCommit:provenance.sourceCommit,version:provenance.version,sourceFilesVerified:Object.keys(provenance.sourceFiles).length,mcpInstalled:true,mcpToolCount:23,ipcDiscovery:true,connectionEditorShipped:true,physicalWrites:false},null,2));
+  }
   assert.equal(snapshot.project.simulation,'water-transfer');assert.equal((await api('control/status')).state,'manual');
   await api('write',{tagId:'pump_command',value:0});await delay(1400);const held1=(await api('values')).values;await delay(1400);const held2=(await api('values')).values;
   assert.equal(held1.source_level.value,held2.source_level.value);assert.equal(held1.destination_level.value,held2.destination_level.value);

@@ -1,0 +1,84 @@
+name: Windows source release qualification
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Draft release containing source payload ZIPs and payload manifest
+        required: true
+        default: v0.4.0-preview
+        type: string
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Download candidate payloads without executing them
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir payloads
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*-Payload.zip' --pattern '*-payloads.json' --dir payloads
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-payloads
+          path: payloads/
+          retention-days: 3
+          if-no-files-found: error
+  qualify:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            arch: x64
+          - os: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-payloads
+          path: ${{ runner.temp }}/flex-payloads
+      - name: Verify payload archive
+        shell: pwsh
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $version=(Get-Content package.json -Raw | ConvertFrom-Json).version
+          $dir=Join-Path $env:RUNNER_TEMP 'flex-payloads'
+          $manifest=Get-Content (Join-Path $dir "FlexHMI-$version-IPC-payloads.json") -Raw | ConvertFrom-Json
+          $entry=@($manifest | Where-Object {$_.arch -eq $env:TARGET_ARCH})
+          if($entry.Count -ne 1 -or $entry[0].sourceCommit -ne $env:GITHUB_SHA){throw 'Candidate source revision mismatch'}
+          $zip=Join-Path $dir $entry[0].file
+          if((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry[0].sha256){throw 'Payload SHA256 mismatch'}
+          "FLEX_PAYLOAD=$zip" >> $env:GITHUB_ENV
+      - name: Build matching source on Windows
+        shell: pwsh
+        run: ./scripts/windows/build-payload.ps1 -PayloadZip $env:FLEX_PAYLOAD -Arch '${{ matrix.arch }}' -OutputDirectory '${{ runner.temp }}/flex-evidence'
+      - name: Install and qualify shipped application
+        shell: pwsh
+        run: ./scripts/windows/verify-installed.ps1 -Installer $env:FLEX_INSTALLER -Arch '${{ matrix.arch }}' -Artifacts '${{ runner.temp }}/flex-evidence'
+      - name: Preserve installer and qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-${{ matrix.arch }}
+          path: ${{ runner.temp }}/flex-evidence/
+          retention-days: 30
+          if-no-files-found: error
