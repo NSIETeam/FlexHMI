@@ -38,7 +38,7 @@ for i in $(seq 1 150); do
 done
 if kill -0 "$app_pid" 2>/dev/null; then kill "$app_pid"; echo 'Native application did not exit within 150 seconds'; exit 1; fi
 wait "$app_pid"
-"$node" -e 'const a=require(process.argv[1]);if(!a.passed||!a.editorRendered||!a.runtimeEditingHidden)throw Error(JSON.stringify(a))' "$artifacts/native-webkit.json"
+"$node" -e 'const a=require(process.argv[1]);if(!a.passed||!a.editorRendered||!a.runtimeEditingHidden||!a.liveValuesRendered)throw Error(JSON.stringify(a))' "$artifacts/native-webkit.json"
 project_id="$("$node" -p 'require(process.argv[1]).projectId' "$artifacts/restore.json")"
 project="$FLEXHMI_DATA_DIR/_appdata/simplehmi/$project_id.json"; before="$(shasum -a 256 "$project")"
 # Replace the app from its original DMG and confirm data still loads in the new copy.

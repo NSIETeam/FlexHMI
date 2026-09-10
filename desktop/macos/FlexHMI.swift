@@ -114,7 +114,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { if acceptance != nil && local(webView.url) { acceptanceTries = 0; checkAcceptance() } }
     func checkAcceptance() {
         guard let directory = acceptance else { return }; acceptanceTries += 1
-        let script = acceptanceStep == 0 ? "Boolean(document.querySelector('#canvas') && document.querySelector('#connection-tools') && document.querySelector('#run'))" : "Boolean(document.querySelector('#canvas') && !document.querySelector('#connection-tools') && document.querySelector('.runtime-shell'))"
+        let liveValues = " && Array.from(document.querySelectorAll('.metric-value')).some(e => e.textContent.includes('4.15'))"
+        let script = (acceptanceStep == 0 ? "Boolean(document.querySelector('#canvas') && document.querySelector('#connection-tools') && document.querySelector('#run'))" : "Boolean(document.querySelector('#canvas') && !document.querySelector('#connection-tools') && document.querySelector('.runtime-shell'))") + liveValues
         web.evaluateJavaScript(script) { value, error in
             if value as? Bool == true {
                 let name = self.acceptanceStep == 0 ? "native-editor.png" : "native-runtime.png"
@@ -122,7 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
                     guard let image = image, let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff), let png = bitmap.representation(using: .png, properties: [:]) else { self.fail("截图失败", snapshotError?.localizedDescription ?? "WebKit 没有返回画面"); return }
                     try? png.write(to: URL(fileURLWithPath: directory).appendingPathComponent(name))
                     if self.acceptanceStep == 0 { self.acceptanceStep = 1; self.web.evaluateJavaScript("document.querySelector('#run').click()") { _, err in if let err = err { self.fail("运行切换失败", err.localizedDescription) } else { self.acceptanceTries = 0; self.checkAcceptance() } } }
-                    else { let record: [String: Any] = ["passed": true, "nativeWebKit": true, "editorRendered": true, "runtimeRendered": true, "runtimeEditingHidden": true, "nativeArchitecture": ProcessInfo.processInfo.environment["FLEXHMI_TARGET_ARCH"] ?? "unknown"]; try? JSONSerialization.data(withJSONObject: record, options: [.prettyPrinted]).write(to: URL(fileURLWithPath: directory).appendingPathComponent("native-webkit.json")); self.finishAcceptance() }
+                    else { let record: [String: Any] = ["passed": true, "nativeWebKit": true, "editorRendered": true, "runtimeRendered": true, "runtimeEditingHidden": true, "liveValuesRendered": true, "nativeArchitecture": ProcessInfo.processInfo.environment["FLEXHMI_TARGET_ARCH"] ?? "unknown"]; try? JSONSerialization.data(withJSONObject: record, options: [.prettyPrinted]).write(to: URL(fileURLWithPath: directory).appendingPathComponent("native-webkit.json")); self.finishAcceptance() }
                 }
             } else if self.acceptanceTries < 100 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.checkAcceptance() } }
             else { self.fail("WebKit 页面验收超时", error?.localizedDescription ?? "编辑/运行画面没有完成渲染") }
