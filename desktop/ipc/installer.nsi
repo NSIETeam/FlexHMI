@@ -1,4 +1,7 @@
 Unicode true
+!ifndef PAYLOADGLOB
+ !define PAYLOADGLOB "${PAYLOAD}/*"
+!endif
 !include "MUI2.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
@@ -53,7 +56,7 @@ Section "FlexHMI" SecMain
  ${EndIf}
  copy:
  SetOutPath "$INSTDIR"
- File /r "${PAYLOAD}/*"
+ File /r "${PAYLOADGLOB}"
  WriteUninstaller "$INSTDIR\Uninstall.exe"
  WriteRegStr HKCU "Software\FlexHMI-IPC" "InstallDir" "$INSTDIR"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayName" "FlexHMI 工控机版 (${ARCH})"

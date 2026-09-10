@@ -10,6 +10,7 @@ if(!(Test-Path $seven)){throw '7-Zip missing from Windows build runner'}
 if($LASTEXITCODE -ne 0){throw 'Candidate payload extraction failed'}
 # Rebuild only the NSIS wrapper. Preserve the exact candidate application payload.
 foreach($extra in @('$PLUGINSDIR','Uninstall.exe')){ $p=Join-Path $payload $extra;if(Test-Path $p){Remove-Item -Recurse -Force $p} }
+if(!(Test-Path (Join-Path $payload 'FlexHMI.exe')) -or !(Test-Path (Join-Path $payload 'node/node.exe'))){throw 'Extracted payload is missing the launcher or Node runtime'}
 $archive=Join-Path $work 'nsis.7z'
 Invoke-WebRequest 'https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z' -OutFile $archive
 if((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne '9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa'){throw 'NSIS tool bundle checksum mismatch'}
@@ -21,7 +22,7 @@ Get-ChildItem $payload -Recurse -File | ForEach-Object { $relative=[IO.Path]::Ge
 Get-ChildItem $payload -Recurse -Directory | Sort-Object {$_.FullName.Length} -Descending | ForEach-Object { $relative=[IO.Path]::GetRelativePath($payload,$_.FullName).Replace('$','$$');$lines+='RMDir "$INSTDIR\'+$relative+'"' }
 $lines | Set-Content $uninstall -Encoding UTF8
 $env:NSISDIR=$tools
-& (Join-Path $tools 'Bin/makensis.exe') /V2 "/DPAYLOAD=$payload" "/DOUTPUT=$Output" "/DARCH=$Arch" "/DICON=$root/desktop/icon.ico" "/DLICENSEFILE=$root/LICENSE" "/DUNINSTALLFILES=$uninstall" "$root/desktop/ipc/installer.nsi"
+& (Join-Path $tools 'Bin/makensis.exe') /V2 "/DPAYLOAD=$payload" "/DPAYLOADGLOB=$payload\*" "/DOUTPUT=$Output" "/DARCH=$Arch" "/DICON=$root/desktop/icon.ico" "/DLICENSEFILE=$root/LICENSE" "/DUNINSTALLFILES=$uninstall" "$root/desktop/ipc/installer.nsi"
 if($LASTEXITCODE -ne 0){throw 'Native Windows NSIS build failed'}
 $evidence=@{arch=$Arch;wrapper='matched Windows NSIS 3.0.4.1';sourceInstallerSHA256=(Get-FileHash $Installer -Algorithm SHA256).Hash.ToLowerInvariant();file=[IO.Path]::GetFileName($Output);sha256=(Get-FileHash $Output -Algorithm SHA256).Hash.ToLowerInvariant();bytes=(Get-Item $Output).Length;payload='Extracted unchanged from verified source installer; not latest repository source'}
 $evidence | ConvertTo-Json | Set-Content "$Output.json" -Encoding UTF8
