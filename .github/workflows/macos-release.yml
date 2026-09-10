@@ -1,0 +1,49 @@
+name: macOS desktop build and qualification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install locked production dependencies
+        run: |
+          npm ci --omit=dev --prefix server
+          npm ci --prefix integrations/mcp
+      - name: Check source and controller lifecycle
+        run: |
+          npm run check
+          node --test tests/ipc-launcher.cjs
+      - name: Build native desktop DMG
+        run: python3 scripts/macos/build.py --work "$RUNNER_TEMP/build" --out "$RUNNER_TEMP/release"
+      - name: Install and verify native application
+        run: ./scripts/macos/verify.sh "$RUNNER_TEMP/release/FlexHMI-0.4.1-macOS-${{ matrix.arch }}.dmg" '${{ matrix.arch }}' "$RUNNER_TEMP/evidence"
+      - name: Preserve package and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/release/
+            ${{ runner.temp }}/evidence/
+          retention-days: 30
+          if-no-files-found: warn

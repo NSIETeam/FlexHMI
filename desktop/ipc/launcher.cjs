@@ -3,9 +3,10 @@
 const fs=require('node:fs'),path=require('node:path'),net=require('node:net'),crypto=require('node:crypto'),http=require('node:http');
 const {spawn}=require('node:child_process');
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-function configuration(root=path.resolve(__dirname,'../..'),data=path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'FlexHMI-IPC')){
+function childExit(child,ms){if(child.exitCode!==null||child.signalCode!==null)return Promise.resolve();return new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);child.off('exit',done);resolve()};child.once('exit',done);timer=setTimeout(done,ms)})}
+function configuration(root=path.resolve(__dirname,'../..'),data=process.env.FLEXHMI_DATA_DIR||(process.platform==='darwin'?path.join(require('node:os').homedir(),'Library','Application Support','FlexHMI'):path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'FlexHMI-IPC'))){
  const key=crypto.createHash('sha256').update(path.resolve(data).toLowerCase()).digest('hex').slice(0,24);
- return {root,data,pipe:process.platform==='win32'?`\\\\.\\pipe\\FlexHMI-${key}`:path.join(data,'controller.sock'),state:path.join(data,'controller.json'),node:process.execPath,backend:path.join(root,'desktop/backend.cjs')};
+ return {root,data,pipe:process.platform==='win32'?`\\\\.\\pipe\\FlexHMI-${key}`:path.join(require('node:os').tmpdir(),'flexhmi-'+key+'.sock'),state:path.join(data,'controller.json'),node:process.execPath,backend:path.join(root,'desktop/backend.cjs')};
 }
 function log(c,value){try{const file=path.join(c.data,'ipc.log');if(fs.existsSync(file)&&fs.statSync(file).size>5*1024*1024)fs.renameSync(file,file+'.previous');fs.appendFileSync(file,`${new Date().toISOString()} ${value}\n`)}catch{}}
 function edgePath(){const candidates=[process.env['ProgramFiles(x86)'],process.env.ProgramFiles,process.env.LOCALAPPDATA].filter(Boolean).map(p=>path.join(p,'Microsoft/Edge/Application/msedge.exe'));return candidates.find(p=>fs.existsSync(p))||null}
@@ -27,7 +28,7 @@ function freePort(){return new Promise((resolve,reject)=>{const s=net.createServ
 async function serve(c,options={}){
  fs.mkdirSync(c.data,{recursive:true});let child,ready=false,closing=false,origin,exitResolve,owned=false;
  const token=crypto.randomBytes(32).toString('hex'),instance=crypto.randomUUID(),ended=new Promise(r=>exitResolve=r);
- async function close(){if(closing)return ended;closing=true;ready=false;if(child&&child.exitCode===null){if(child.connected)child.send({type:'shutdown'});await Promise.race([new Promise(r=>child.once('exit',r)),delay(4000)]);if(child.exitCode===null)child.kill();await Promise.race([new Promise(r=>child.once('exit',r)),delay(2000)])}
+ async function close(){if(closing)return ended;closing=true;ready=false;if(child&&child.exitCode===null){if(child.connected)child.send({type:'shutdown'});await childExit(child,4000);if(child.exitCode===null)child.kill();await childExit(child,2000)}
   server.close();if(owned){try{const meta=JSON.parse(fs.readFileSync(c.state));if(meta.token===token)fs.unlinkSync(c.state)}catch{}}
   process.off('SIGINT',close);process.off('SIGTERM',close);exitResolve();return ended;
  }
@@ -38,8 +39,21 @@ async function serve(c,options={}){
   if(!['editor','runtime','kiosk'].includes(m.command))throw Error('不支持的启动方式');if(!ready||closing)throw Error('运行服务尚未就绪');
   await (options.openBrowser||openBrowser)(c,origin,m.command);socket.end('{"opened":true}\n');
  }catch(e){socket.end(JSON.stringify({error:e.message})+'\n')}})});
+ if(process.platform!=='win32'){
+  try{
+   const old=fs.lstatSync(c.pipe),meta=JSON.parse(fs.readFileSync(c.state,'utf8'));
+   if(old.isSocket()&&old.uid===process.getuid()&&Number.isInteger(meta.pid)){
+    let alive=true;try{process.kill(meta.pid,0)}catch(e){if(e.code==='ESRCH')alive=false}
+    if(!alive){
+     const connected=await new Promise(resolve=>{const s=net.createConnection(c.pipe);s.once('connect',()=>{s.destroy();resolve(true)});s.once('error',()=>resolve(false));s.setTimeout(1000,()=>{s.destroy();resolve(true)})});
+     if(!connected){const now=fs.lstatSync(c.pipe);if(now.ino===old.ino&&now.uid===old.uid)fs.unlinkSync(c.pipe)}
+    }
+   }
+  }catch(e){if(!['ENOENT','ECONNREFUSED'].includes(e.code))throw e}
+ }
  // Listening claims the singleton before any metadata or backend is created.
  try{await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(c.pipe,resolve)})}catch(e){if(e.code==='EADDRINUSE')return {duplicate:true};throw e}
+ if(process.platform!=='win32')fs.chmodSync(c.pipe,0o600);
  owned=true;fs.writeFileSync(c.state,JSON.stringify({token,pid:process.pid}),{mode:0o600});
  server.on('error',e=>{log(c,e.stack);void close()});process.on('SIGINT',close);process.on('SIGTERM',close);
  try{
@@ -54,13 +68,13 @@ async function serve(c,options={}){
 async function main(){const c=configuration();fs.mkdirSync(c.data,{recursive:true});const mode=(process.argv[2]||'--editor').replace(/^--/,'');
  try{
   if(mode==='daemon'){await serve(c);return}
-  if(!['editor','runtime','kiosk','stop','status'].includes(mode))throw Error('无效参数');
+  if(!['editor','runtime','kiosk','stop','status','ensure'].includes(mode))throw Error('无效参数');
   if(mode==='status'){console.log(JSON.stringify(await request(c,'status')));return}
   if(mode==='stop'){try{await request(c,'stop')}catch(e){if(!['ENOENT','ECONNREFUSED'].includes(e.code))throw e;return}for(let i=0;i<40;i++){try{await request(c,'status')}catch(e){if(['ENOENT','ECONNREFUSED'].includes(e.code))return}await delay(250)}throw Error('服务尚未停止，请查看 ipc.log。')}
-  if(!edgePath())throw Error('未找到 Microsoft Edge，请先安装 Edge。');
+  if(mode!=='ensure'&&!edgePath())throw Error('未找到 Microsoft Edge，请先安装 Edge。');
   let existing;try{existing=await request(c,'status')}catch{}
   if(!existing){const daemon=spawn(c.node,[__filename,'--daemon'],{cwd:c.data,detached:true,stdio:'ignore',windowsHide:true});await new Promise((resolve,reject)=>{daemon.once('error',reject);daemon.once('spawn',()=>{daemon.unref();resolve()})})}
-  for(let i=0;i<260;i++){let s;try{s=await request(c,'status')}catch{}if(s?.ready){await request(c,mode,10000);return}await delay(250)}
+  for(let i=0;i<260;i++){let s;try{s=await request(c,'status')}catch{}if(s?.ready){if(mode==='ensure')console.log(JSON.stringify(s));else await request(c,mode,10000);return}await delay(250)}
   throw Error('运行服务未能就绪。请查看 ipc.log。');
  }catch(e){log(c,e.stack);fs.writeFileSync(path.join(c.data,'last-error.txt'),e.message,'utf8');console.error(e.message);process.exitCode=1}
 }

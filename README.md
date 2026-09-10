@@ -6,11 +6,13 @@
 
 **官网与下载：[flexhmi.nsieteam.chatgpt.site](https://flexhmi.nsieteam.chatgpt.site)**
 
-## 工控机预览版与 AI 工作台
+## 桌面预览版与 AI 工作台
 
-产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。工控机版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.0 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.0-preview)、[工控机版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.2 MB，ARM64 约 56.2 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
+产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.0 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.0-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.2 MB，ARM64 约 56.2 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
 
 AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务，尚未用真实账号验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
+
+macOS 原生桌面版正在补齐 Apple Silicon 与 Intel 构建及安装验收，使用系统 WebKit；见 [Mac 版说明](docs/simplehmi/MACOS.md)。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
 ## 历史 0.2.0 桌面版与图形扩展
 

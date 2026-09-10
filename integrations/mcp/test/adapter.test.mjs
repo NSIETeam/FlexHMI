@@ -60,3 +60,10 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
  }catch(e){e.message+='\n'+log.slice(-2500);throw e}
  finally{await readClient?.close();await client?.close();if(backend&&backend.exitCode===null)await new Promise(r=>{backend.once('exit',r);backend.kill('SIGTERM');setTimeout(()=>{backend.kill('SIGKILL');r()},3000).unref()});fs.rmSync(temp,{recursive:true,force:true});}
 });
+
+test('MCP starts when the entrypoint is opened through a symlink',async()=>{
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'flex-mcp-link-')),entry=path.join(temp,'server.mjs');
+ fs.symlinkSync(path.join(root,'integrations/mcp/server.mjs'),entry);
+ const client=new Client({name:'symlink-qa',version:'1.0.0'});
+ try{await client.connect(new StdioClientTransport({command:process.execPath,args:[entry],env:{...process.env,FLEXHMI_ACCESS:'full'},stderr:'pipe'}));assert.equal((await client.listTools()).tools.length,23)}finally{await client.close();fs.rmSync(temp,{recursive:true,force:true})}
+});
