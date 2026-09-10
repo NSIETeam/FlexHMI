@@ -85,3 +85,5 @@
 
 
 官网第 1 版已公开发布：https://flexhmi.nsieteam.chatgpt.site 。未携带账号凭据的 HTTP 验证确认首页 200、版本 JSON 与本地一致、品牌及产品截图哈希一致；两个 GitHub 安装器下载链接、大小与 SHA-256 对应已验收资产。Site 源码为独立目录 FlexHMI-Website，提交 1b353174cf68f6745af0e68533a895c249e19c0a；部署成功。发布版 v0.4.0-preview 已公开；全目标继续保持未完成。
+
+2026-09-10 桌面交付调整：用户明确暂不刻意考虑工控机。补齐原生 macOS 0.4.1 Apple Silicon / Intel，源码 cf5319ec9c5a47b215fbc6569cceef6c86b5053a；双架构运行 34497359967 在 macOS 15.7.9 验收通过，覆盖 DMG 安装、原生 WebKit 编辑/运行与实时数值、SQLite/串口模块、23 个 MCP 工具、工程保存恢复、单实例、覆盖安装和卸载保留数据。Mac 包未 Developer ID 签名或公证；macOS 13/14、物理 PLC、真实模型和行业知识质量仍不计入已验收。新增路径别名 MCP 回归，官方客户端 4 项通过。

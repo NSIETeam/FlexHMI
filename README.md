@@ -1,4 +1,4 @@
-# FlexHMI 0.3.0
+# FlexHMI
 
 基于 **frangoteam/FUXA v1.3.4** 的中文极简工控组态工作台。拖入组件、绑定变量、运行。内置守恒双水箱供水和垃圾焚烧发电演示工程，不连接 PLC 也能完整体验。
 
@@ -12,7 +12,7 @@
 
 AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务，尚未用真实账号验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
 
-macOS 原生桌面版正在补齐 Apple Silicon 与 Intel 构建及安装验收，使用系统 WebKit；见 [Mac 版说明](docs/simplehmi/MACOS.md)。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
+macOS **0.4.1 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.1-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
 ## 历史 0.2.0 桌面版与图形扩展
 
@@ -241,7 +241,7 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 
 源码现提供官方 MCP SDK 的本机 stdio 扩展。使用 Node.js 22+，在仓库根目录运行 `npm run setup:mcp`，然后在 **AI 工作台 → 连接外部 Agent** 复制当前机器的配置。完整范围提供 23 个工具，支持工程预览/应用、实时值与历史、知识评估、控制启停和带版本/当前值/时效检查的点位写入；真实输出默认关闭。
 
-详见 [接入说明](integrations/mcp/README.md)。0.4.0 工控机安装包已纳入并验收此扩展；0.3.0 IPC 旧包不包含。后端 80 项回归及官方 MCP 客户端 3 项测试已通过；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
+详见 [接入说明](integrations/mcp/README.md)。0.4.0 工控机安装包已纳入并验收此扩展；0.3.0 IPC 旧包不包含。后端 81 项回归及官方 MCP 客户端 4 项测试已通过；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
 
 ## Windows 安装验收状态
 
