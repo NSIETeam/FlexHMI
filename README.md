@@ -18,6 +18,8 @@ macOS **0.4.1 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS
 
 AI 工作台 → 工程与记录支持“恢复修改前版本”。先逐项查看应用前后差异，再应用；恢复会暂停自动控制，知识正文以新版本保存，现场设备输出不会回滚。HTTP、内置模型操作契约与 MCP 共用 project.revert。见 [Agent 历史恢复说明](docs/simplehmi/ai/AGENT-API.md#恢复修改前版本)。
 
+控制面板新增无代码**步骤流程**：配置步骤、输出和跳转条件，预览后应用，再单独启动。支持顺序、分支、循环、超时、逐点回读和人工接管；外部 Agent 可通过同一计划接口生成。导入 [三步供水示例](examples/water-steps.simplehmi.json) 后，在“控制”面板启动即可体验。见 [控制与步骤流程](docs/simplehmi/ai/CONTROL.md)。这些功能尚未进入官网的 Windows 0.4.0 / macOS 0.4.1 安装包。
+
 ## 历史 0.2.0 桌面版与图形扩展
 
 提供 Windows x64 / ARM64 两种安装包，内置运行环境。安装、架构与验收边界见 [发布说明](docs/simplehmi/RELEASE-0.2.0.md)，完整产品批判见 [审查记录](docs/simplehmi/PRODUCT-REVIEW.md)。当前未签名，尚未完成 Windows 实机安装回归。
@@ -245,7 +247,7 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 
 源码现提供官方 MCP SDK 的本机 stdio 扩展。使用 Node.js 22+，在仓库根目录运行 `npm run setup:mcp`，然后在 **AI 工作台 → 连接外部 Agent** 复制当前机器的配置。完整范围提供 23 个工具，支持工程预览/应用、实时值与历史、知识评估、控制启停和带版本/当前值/时效检查的点位写入；真实输出默认关闭。
 
-详见 [接入说明](integrations/mcp/README.md)。0.4.0 工控机安装包已纳入并验收此扩展；0.3.0 IPC 旧包不包含。后端 81 项回归及官方 MCP 客户端 4 项测试已通过；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
+详见 [接入说明](integrations/mcp/README.md)。Windows 0.4.0 与 macOS 0.4.1 桌面安装包已纳入并验收此扩展；0.3.0 IPC 旧包不包含。接入协议与最新源码能力的验证见 MCP 文档；接入面板已通过隔离的无头 Chrome 浏览器验收，尚未做桌面人工交互验收。
 
 ## Windows 安装验收状态
 

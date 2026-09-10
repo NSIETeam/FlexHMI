@@ -60,6 +60,18 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   assert.equal((await call('flexhmi_project',{id:archived.archiveId,archived:true})).project.id,copy.id);
   const restore=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'恢复备用工程',operations:[{op:'project.restore',archiveId:archived.archiveId,expectedSavedRevision:archived.revision}]});await call('flexhmi_apply',{planId:restore.id});assert.equal((await call('flexhmi_state')).project.id,original.id);assert.ok((await call('flexhmi_projects')).projects.some(p=>p.id===copy.id));assert.ok((await call('flexhmi_plans')).data.some(p=>p.id===restore.id&&p.status==='applied'));
 
+  const flowSource=await call('flexhmi_state'),output=await until(async()=>{const v=(await call('flexhmi_values')).values.pump_command;return v.quality==='good'&&v});
+  await call('flexhmi_write_point',{expectedRevision:flowSource.revision,deviceId:'supply',tagId:'pump_command',expectedValue:output.value,observedAt:output.ts,value:0,outputMin:0,outputMax:1});
+  const machine={id:'mcp_steps',name:'Agent 顺序控制',enabled:true,initialState:'idle',maxAgeMs:3500,minIntervalMs:1000,guards:[],states:[
+   {id:'idle',name:'待机',timeoutMs:0,actions:[{tagId:'pump_command',value:0,min:0,max:1}],transitions:[{to:'running',priority:0,afterMs:1000,holdMs:0,conditions:[]}]},
+   {id:'running',name:'供水',timeoutMs:10000,actions:[{tagId:'pump_command',value:1,min:0,max:1}],transitions:[{to:'done',priority:0,afterMs:1500,holdMs:0,conditions:[]}]},
+   {id:'done',name:'停机',timeoutMs:0,actions:[{tagId:'pump_command',value:0,min:0,max:1}],transitions:[]}
+  ]};
+  const flow=await call('flexhmi_preview',{expectedRevision:flowSource.revision,summary:'MCP 生成步骤流程',operations:[{op:'rule.upsert',rule:{id:'water_level_control',enabled:false}},{op:'machine.upsert',machine}]});assert.equal(flow.blocked,false);assert.equal((await call('flexhmi_state')).project.control.machines?.length||0,0);
+  await call('flexhmi_apply',{planId:flow.id});assert.equal((await call('flexhmi_control_status')).state,'manual');await call('flexhmi_control_arm',{expectedRevision:(await call('flexhmi_state')).revision});
+  await until(async()=> (await call('flexhmi_control_status')).machines[0]?.stateId==='running');assert.equal(Number((await call('flexhmi_values')).values.pump_command.value),1);
+  await until(async()=> (await call('flexhmi_control_status')).machines[0]?.stateId==='done');assert.equal(Number((await call('flexhmi_values')).values.pump_command.value),0);assert.equal((await call('flexhmi_control_status')).machines[0].writes,2);await call('flexhmi_control_pause');
+
  }catch(e){e.message+='\n'+log.slice(-2500);throw e}
  finally{await readClient?.close();await client?.close();if(backend&&backend.exitCode===null)await new Promise(r=>{backend.once('exit',r);backend.kill('SIGTERM');setTimeout(()=>{backend.kill('SIGKILL');r()},3000).unref()});fs.rmSync(temp,{recursive:true,force:true});}
 });

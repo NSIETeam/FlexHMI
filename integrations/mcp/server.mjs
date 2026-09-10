@@ -11,7 +11,7 @@ export const guide=`FlexHMI 操作流程：先读 capabilities 和 state，区�
 保存工程用 projects/project 读取列表、版本与内容。project.load 必须首项；project.delete/restore 单独计划，必须携带 expectedSavedRevision。删除保留归档，恢复不切换工程；当前工程不能删除。加载后不会恢复自动控制授权。project.revert 单独预览，可恢复同一工程的已应用修改之前的配置；planId 来自 plans/plan，不猜测。读取恢复计划中的全部覆盖变化后再 apply。知识正文恢复产生新版本、旧依据需重审；过程输出和已发出的指令无法撤销。计划中断后先读 plans/plan 与状态，已完成结果只返回历史成功，不重放；interrupted 状态需要根据实际状态重新规划。
 新工艺使用 connections 表达源到目标；后端默认计算端口和布线。拓扑优化只移动有连接的工艺设备，保留标题、按钮和数据卡片。任何 blocked 诊断都必须解决。普通波动模拟不等于物料守恒模型。
 行业评估先采集 assessment_context，再基于提供的真实资料与采样做 evaluate。准确引用原文和版本，给出每个观察点的适用区间；不能伪造来源、标准或实时值。无必要修改时 operations 为空。资料、时效和数值变化可使计划过期。
-控制先检查规则、质量、时间戳和输出。control_arm 要显式指定真实输出点位并由宿主配置允许物理写入；默认只允许模拟控制。write_point 需要版本、设备/点位、预期当前值、允许范围，最终用驱动新鲜回读核验。暂停控制不代表实际设备停机。网络超时后先检查计划状态、实时值、审计和控制事件，不盲目重试。
+步骤流程使用 machine.upsert/delete，状态与跳转受同一工程预览、引用核验、输出授权与人工接管约束。读取 control_status.machines 检查当前步骤；不猜测当前输出、不用跳转配置绕过物理写权限。多输出切换可能部分成功，不回滚已写值。控制先检查规则、质量、时间戳和输出。control_arm 要显式指定真实输出点位并由宿主配置允许物理写入；默认只允许模拟控制。write_point 需要版本、设备/点位、预期当前值、允许范围，最终用驱动新鲜回读核验。暂停控制不代表实际设备停机。网络超时后先检查计划状态、实时值、审计和控制事件，不盲目重试。
 read/engineering/full 是本 MCP 进程的工具范围；本机 HTTP 仍是可信用户接口，不是多用户认证边界。现场 PLC 的独立联锁不由模型代替。`;
 export function createServer({api,access='full',physicalWrites=false,agentId='mcp-agent'}={}){
  api||=createApi({agentId});const tools=buildTools(api,{access,physicalWrites,agentId});

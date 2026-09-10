@@ -3,16 +3,17 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const {mountAi}=require('./ai');
 const {mcpConfiguration}=require('./mcp-config');
 const {projectStore}=require('./project-store');
+const {references:machineReferences}=require('./state-machine');
 const {validateKnowledgeRevision,citationProblems,assertAssessmentFresh,mountAssessments}=require('./knowledge');
 const clone=x=>JSON.parse(JSON.stringify(x));
 const digest=p=>crypto.createHash('sha256').update(JSON.stringify(p)).digest('hex');
 const modes=['visualization','intelligent-control','industry-ai'];
-const operations=['project.create','project.load','project.delete','project.restore','project.revert','project.configure','device.upsert','device.delete','tag.upsert','tag.delete','page.upsert','page.delete','component.upsert','component.delete','connection.upsert','connection.delete','asset.upsert','asset.delete','page.optimize','project.optimize','rule.upsert','rule.delete','knowledge.upsert','knowledge.delete'];
+const operations=['project.create','project.load','project.delete','project.restore','project.revert','project.configure','device.upsert','device.delete','tag.upsert','tag.delete','page.upsert','page.delete','component.upsert','component.delete','connection.upsert','connection.delete','asset.upsert','asset.delete','page.optimize','project.optimize','rule.upsert','rule.delete','machine.upsert','machine.delete','knowledge.upsert','knowledge.delete'];
 const idOk=x=>typeof x==='string'&&/^[a-zA-Z0-9_-]{1,90}$/.test(x)&&!['__proto__','constructor','prototype'].includes(x);
 function need(value,message){if(!value)throw Error(message);return value}
 function upsert(list,value){need(value&&idOk(value.id),'对象需要有效 id');const i=list.findIndex(x=>x.id===value.id);if(i<0)list.push(clone(value));else list[i]={...list[i],...clone(value)}}
 function remove(list,id){need(list.some(x=>x.id===id),'找不到要删除的对象：'+id);return list.filter(x=>x.id!==id)}
-function entities(p){const map=new Map();map.set('project/'+p.id,{name:p.name,system:p.system,activePageId:p.activePageId,simulation:p.simulation});for(const d of p.devices){map.set('device/'+d.id,{...d,tags:undefined});for(const t of d.tags)map.set('tag/'+t.id,t)}for(const pg of p.pages){map.set('page/'+pg.id,{...pg,components:undefined,connections:undefined});for(const c of pg.components)map.set('component/'+c.id,c);for(const e of pg.connections||[])map.set('connection/'+e.id,e)}for(const e of p.knowledge||[])map.set('knowledge/'+e.id,e);for(const r of p.control?.rules||[])map.set('rule/'+r.id,r);for(const a of p.customSymbols||[])map.set('asset/'+a.id,a);return new Map([...map].map(([k,v])=>[p.id+'/'+k,v]))}
+function entities(p){const map=new Map();map.set('project/'+p.id,{name:p.name,system:p.system,activePageId:p.activePageId,simulation:p.simulation});for(const d of p.devices){map.set('device/'+d.id,{...d,tags:undefined});for(const t of d.tags)map.set('tag/'+t.id,t)}for(const pg of p.pages){map.set('page/'+pg.id,{...pg,components:undefined,connections:undefined});for(const c of pg.components)map.set('component/'+c.id,c);for(const e of pg.connections||[])map.set('connection/'+e.id,e)}for(const e of p.knowledge||[])map.set('knowledge/'+e.id,e);for(const r of p.control?.rules||[])map.set('rule/'+r.id,r);for(const m of p.control?.machines||[])map.set('machine/'+m.id,m);for(const a of p.customSymbols||[])map.set('asset/'+a.id,a);return new Map([...map].map(([k,v])=>[p.id+'/'+k,v]))}
 function changes(before,after){const a=entities(before),b=entities(after);return [...new Set([...a.keys(),...b.keys()])].flatMap(id=>JSON.stringify(a.get(id))===JSON.stringify(b.get(id))?[]:[{entity:id,action:!a.has(id)?'added':!b.has(id)?'removed':'updated',before:a.get(id)||null,after:b.get(id)||null}])}
 function repair(p,impacts){
  const tags=new Set(p.devices.flatMap(d=>d.tags.map(t=>t.id))),assets=new Set((p.customSymbols||[]).map(a=>a.id));
@@ -23,6 +24,7 @@ function repair(p,impacts){
   }
  }
  for(const r of p.control?.rules||[]){const missing=[r.inputTag,r.outputTag,...(r.guards||[]).map(g=>g.tagId)].filter(id=>!tags.has(id));if(missing.length){r.enabled=false;r.invalidReason='关联变量已删除：'+[...new Set(missing)].join('、');impacts.push({code:'rule-disabled',entity:r.id,message:'控制规则已停用：'+r.invalidReason});}else {const problems=citationProblems(p,r);if(problems.length){r.enabled=false;r.invalidReason=problems.join('；');impacts.push({code:'rule-evidence-invalid',entity:r.id,message:'关联依据变化，规则已停用：'+r.invalidReason});}else delete r.invalidReason;}}
+ for(const m of p.control?.machines||[]){const missing=machineReferences(m).filter(id=>!tags.has(id)),problems=citationProblems(p,m);if(missing.length||problems.length){m.enabled=false;m.invalidReason=missing.length?'关联变量已删除：'+missing.join('、'):problems.join('；');impacts.push({code:'machine-disabled',entity:m.id,message:'步骤流程已停用：'+m.invalidReason})}else delete m.invalidReason;}
  if(!p.pages.some(pg=>pg.id===p.activePageId)){p.activePageId=p.pages[0]?.id;impacts.push({code:'active-page-changed',message:'当前画面已切换到保留的第一页'})}
 }
 async function applyOperations(before,request,validate,store,history){
@@ -67,6 +69,8 @@ async function applyOperations(before,request,validate,store,history){
    case 'asset.delete':p.customSymbols=remove(p.customSymbols||[],op.id);break;
    case 'knowledge.upsert':p.knowledge||=[];upsert(p.knowledge,op.entry);break;
    case 'knowledge.delete':p.knowledge=remove(p.knowledge||[],op.id);break;
+   case 'machine.upsert':p.control||={rules:[]};p.control.machines||=[];upsert(p.control.machines,op.machine);break;
+   case 'machine.delete':p.control||={rules:[]};p.control.machines=remove(p.control.machines||[],op.id);break;
    case 'rule.upsert':p.control||={rules:[]};upsert(p.control.rules,op.rule);break;
    case 'rule.delete':p.control||={rules:[]};p.control.rules=remove(p.control.rules,op.id);break;
    case 'page.optimize':optimize.add(pg().id);break;
@@ -96,7 +100,7 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
  const audit=e=>fs.appendFileSync(path.join(folder,'audit.jsonl'),JSON.stringify({at:new Date().toISOString(),...e})+'\n');
  const endpoint=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||400).json({error:e.message,code:e.code||'invalid-plan',...(e.outcomeUnknown?{outcomeUnknown:true}:{})})}};
  const conflict=()=>{const e=Error('工程已被其他操作修改，请重新读取状态并预览计划');e.status=409;e.code='revision-conflict';throw e};
- router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','saved-project-lifecycle','engineering-history-revert','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','state-machine-editor','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
+ router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','saved-project-lifecycle','engineering-history-revert','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','state-machine-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
  router.get('/agent/projects',endpoint(async(req,res)=>res.json(projects.inventory(getProject().id))));
  router.get('/agent/projects/:id',endpoint(async(req,res)=>res.json(projects.read(req.params.id,req.query.archived==='1'))));
  router.get('/agent/plans',endpoint(async(req,res)=>res.json(scanPlans().map(f=>{try{const p=readPlan(f);return {id:p.id,summary:p.summary,status:p.status,createdAt:p.createdAt,recovery:p.recovery,projectId:p.project?.id,revertsPlanId:p.revertsPlanId,canRevert:p.status==='applied'&&!p.fileEffect&&p.before?.id===getProject().id&&p.project?.id===getProject().id}}catch(e){return {id:f.slice(0,-5),summary:'计划记录无法读取',status:'unreadable',error:e.message,createdAt:0}}}).sort((a,b)=>Number(['interrupted','unreadable'].includes(b.status))-Number(['interrupted','unreadable'].includes(a.status))||b.createdAt-a.createdAt).slice(0,200))));

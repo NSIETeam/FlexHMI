@@ -38,6 +38,22 @@ test('SimpleHMI real FUXA integration', {timeout:90000}, async t=>{
   const Modbus=require('../server/node_modules/modbus-serial'),client=new Modbus();await client.connectTCP('127.0.0.1',{port:1503});client.setID(1);assert.equal((await client.readCoils(0,1)).data[0],true);await new Promise(r=>client.close(r));
   assert.ok((await request('/control/events')).data.some(e=>e.event==='write-verified'&&e.ruleId==='modbus_rule'));
  });
+ await t.test('Agent step flow drives a real Modbus test slave through idle, running and stopped outputs',async()=>{
+  await request('/control/pause',{});await request('/write',{tagId:'coil',value:0});
+  const state=(await request('/agent/state')).data;
+  const machine={id:'modbus_steps',name:'Modbus 顺序演示',enabled:true,initialState:'idle',maxAgeMs:3500,minIntervalMs:1000,guards:[],states:[
+   {id:'idle',name:'待机',timeoutMs:10000,actions:[{tagId:'coil',value:0,min:0,max:1}],transitions:[{to:'running',priority:0,afterMs:1000,holdMs:0,conditions:[{tagId:'temp',op:'gte',value:30}]}]},
+   {id:'running',name:'运行',timeoutMs:10000,actions:[{tagId:'coil',value:1,min:0,max:1}],transitions:[{to:'done',priority:0,afterMs:2500,holdMs:0,conditions:[]}]},
+   {id:'done',name:'停机',timeoutMs:0,actions:[{tagId:'coil',value:0,min:0,max:1}],transitions:[]}
+  ]};
+  const plan=(await request('/agent/plans',{expectedRevision:state.revision,operations:[{op:'rule.delete',id:'modbus_rule'},{op:'machine.upsert',machine}]})).data;
+  assert.equal((await request('/project')).data.control.machines?.length||0,0);await request('/agent/plans/'+plan.id+'/apply',{});assert.equal((await request('/control/status')).data.state,'manual');
+  const revision=(await request('/agent/state')).data.revision;assert.equal((await request('/control/arm',{expectedRevision:revision},false)).status,400);await request('/control/arm',{expectedRevision:revision,allowPhysical:true,physicalTargets:['coil']});
+  const Modbus=require('../server/node_modules/modbus-serial'),client=new Modbus();await client.connectTCP('127.0.0.1',{port:1503});client.setID(1);
+  try{await until(async()=> (await request('/control/status')).data.machines[0]?.stateId==='running');assert.equal((await client.readCoils(0,1)).data[0],true);await until(async()=> (await request('/control/status')).data.machines[0]?.stateId==='done');assert.equal((await client.readCoils(0,1)).data[0],false);}
+  finally{await new Promise(r=>client.close(r))}
+  const status=(await request('/control/status')).data;assert.equal(status.state,'automatic');assert.equal(status.machines[0].writes,2);assert.equal((await request('/control/events')).data.filter(e=>e.event==='transition-completed'&&e.machineId==='modbus_steps').length,2);
+ });
  await t.test('disconnect becomes stale and cannot report successful write',async()=>{await stop(slave);await until(async()=> (await request('/values')).data.values.temp.quality==='stale');await until(async()=> (await request('/control/status')).data.state==='fault');const out=await request('/write',{tagId:'temp',value:35},false);assert.equal(out.status,400);assert.match(out.data.error,/回读/)});
  await t.test('switch project clears previous device and history exists',async()=>{const p=project();p.id='second';await request('/project',p);await until(async()=> (await request('/values')).data.values.temp.quality==='good');await sleep(1200);assert.ok((await request('/history/temp')).data.length>0);const upstream=await(await fetch('http://127.0.0.1:1882/api/project')).json();assert.ok(upstream.devices.sh_second_plc);assert.ok(!upstream.devices.sh_test_plc)});
  await t.test('server restart restores active saved project',async()=>{await stop(server);start();await until(async()=> (await request('/status')).data.ready);assert.equal((await request('/project')).data.id,'second');await until(async()=> (await request('/values')).data.values.temp.quality==='good')});
