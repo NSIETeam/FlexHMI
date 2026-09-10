@@ -54,12 +54,12 @@ module.exports=function mount(app,runtime,settings,base=''){
  function serial(fn){const result=queue.then(fn);queue=result.catch(()=>{});return result;}
  const readTag=(d,t)=>runtime.devices.getDevicesValues()[`sh_${active.id}_${d.id}`]?.[`sh_${active.id}_${t.id}`];
  const file=id=>path.join(dir,id+'.json');
- function persist(p){const tmp=file(p.id)+'.tmp';fs.writeFileSync(tmp,JSON.stringify(p,null,2));fs.renameSync(tmp,file(p.id));fs.writeFileSync(path.join(dir,'active.txt'),p.id);}
- async function activate(p){
+ function persist(p){const tmp=file(p.id)+'.tmp';fs.writeFileSync(tmp,JSON.stringify(p,null,2));fs.renameSync(tmp,file(p.id));const marker=path.join(dir,'active.txt');fs.writeFileSync(marker+'.tmp',p.id);fs.renameSync(marker+'.tmp',marker);}
+ async function activate(p,{pauseControl=false}={}){
   p=validate(p);
   validateKnowledgeRevision(active,p);
   if(p.pages.some(pg=>pg.connections?.length)){const {routePage}=await import('../../simplehmi/topology.mjs');p.pages=p.pages.map(pg=>pg.connections?.length?routePage(pg).page:pg)}
-  if(controlSignature(p)!==controlSignature(active))control.pause('工程控制配置变化，自动控制已暂停；请检查后重新启动');
+  if(pauseControl||controlSignature(p)!==controlSignature(active))control.pause('工程控制配置变化，自动控制已暂停；请检查后重新启动');
   const next=JSON.stringify([p.id,p.devices,p.simulation]);
   if(next!==fingerprint){
    const upstream=await runtime.project.getProject('admin',-1);
@@ -149,7 +149,7 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
  const init=setInterval(async()=>{
   if(!Object.hasOwn(runtime.devices.getDevicesStatus(),'0')||ready)return;
   clearInterval(init);
-  try{let p=JSON.parse(fs.readFileSync(path.join(staticDir,'demo.json')));const marker=path.join(dir,'active.txt');if(fs.existsSync(marker)){const id=fs.readFileSync(marker,'utf8');if(safeId(id)&&fs.existsSync(file(id)))p=JSON.parse(fs.readFileSync(file(id)));}await serial(()=>activate(p));ready=true;runtime.logger.info('SimpleHMI ready at /simplehmi/');}catch(e){runtime.logger.error('SimpleHMI init failed: '+e.stack);}
+  try{let p=JSON.parse(fs.readFileSync(path.join(staticDir,'demo.json')));const marker=path.join(dir,'active.txt');if(fs.existsSync(marker)){const id=fs.readFileSync(marker,'utf8');if(safeId(id)&&fs.existsSync(file(id)))p=JSON.parse(fs.readFileSync(file(id)));}await serial(()=>activate(p));await agentApi.recover();ready=true;runtime.logger.info('SimpleHMI ready at /simplehmi/');}catch(e){runtime.logger.error('SimpleHMI init failed: '+e.stack);}
  },400);
  const ticker=setInterval(async()=>{
   if(!ready||!active||simBusy)return;simBusy=true;

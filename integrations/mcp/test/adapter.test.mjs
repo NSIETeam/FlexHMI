@@ -25,7 +25,7 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
  try{
   backend=spawn(process.execPath,[path.join(root,'server/main.js')],{cwd:temp,env:{...process.env,SIMPLEHMI:'1',PORT:String(port),userDir:temp},stdio:['ignore','pipe','pipe']});backend.stdout.on('data',b=>log+=b);backend.stderr.on('data',b=>log+=b);
   await until(async()=> (await(await fetch(`http://127.0.0.1:${port}/simplehmi/api/status`)).json()).ready);
-  client=await connect();const listed=await client.listTools();assert.equal(listed.tools.length,21);assert.equal((await client.listResources()).resources.length,4);
+  client=await connect();const listed=await client.listTools();assert.equal(listed.tools.length,23);assert.equal((await client.listResources()).resources.length,4);
   const guide=await client.readResource({uri:'flexhmi://guide'});assert.match(guide.contents[0].text,/expectedRevision/);
   const prompt=await client.getPrompt({name:'build_system',arguments:{requirement:'双水箱供水画面',mode:'visualization'}});assert.match(prompt.messages[0].content.text,/双水箱/);
   const before=await call('flexhmi_state');
@@ -40,11 +40,23 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   const {waterDemo}=await import('../../../simplehmi/water-demo.mjs');
   const knowledge={id:'mcp_evidence',title:'MCP 守恒演示资料',domain:'示例',source:'测试样例，不是行业标准',version:1,content:'封闭水箱演示系统的总水量恒定为 4.15 m³。'};
   const seed=await call('flexhmi_preview',{expectedRevision:state.revision,summary:'准备 MCP 行业评估与控制',operations:[{op:'project.configure',mode:'industry-ai'},{op:'knowledge.upsert',entry:knowledge},{op:'rule.upsert',rule:waterDemo('intelligent-control','mcp_fixture').control.rules[0]}]});await call('flexhmi_apply',{planId:seed.id});
-  const seeded=await call('flexhmi_state');assert.equal((await call('flexhmi_control_arm',{expectedRevision:seeded.revision})).state,'automatic');assert.equal((await call('flexhmi_control_pause')).state,'manual');
+  const seeded=await call('flexhmi_state');assert.equal((await call('flexhmi_control_arm',{expectedRevision:seeded.revision})).state,'automatic');
+  const currentSaved=(await call('flexhmi_projects')).projects.find(p=>p.active),reload=await call('flexhmi_preview',{expectedRevision:seeded.revision,summary:'重新加载并接管自动控制',operations:[{op:'project.load',id:currentSaved.id,expectedSavedRevision:currentSaved.revision}]});await call('flexhmi_apply',{planId:reload.id});assert.equal((await call('flexhmi_control_status')).state,'manual');assert.equal((await call('flexhmi_control_pause')).state,'manual');
   const context=await call('flexhmi_assessment_context',{expectedRevision:seeded.revision,prompt:'依据演示资料核验总水量',knowledgeIds:['mcp_evidence'],observedTagIds:['total_volume']});
   const evaluation=await call('flexhmi_evaluate',{contextId:context.id,summary:'引用守恒资料的 MCP 评估',operations:[{op:'project.configure',name:'MCP 行业评估已应用'}],assessment:{conclusion:'当前总水量符合本演示的守恒值，不代表现场认证。',citations:[{entryId:'mcp_evidence',version:1,excerpt:'总水量恒定为 4.15 m³。'}],conditions:[{tagId:'total_volume',min:4.14,max:4.16}]}});
   assert.equal(evaluation.status,'preview');assert.equal((await call('flexhmi_assessment',{evaluationId:evaluation.id})).id,evaluation.id);await call('flexhmi_apply',{planId:evaluation.plan.id});assert.equal((await call('flexhmi_state')).project.name,'MCP 行业评估已应用');
   const fresh=await call('flexhmi_state'),stale=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:before.revision,summary:'过期计划',operations:[{op:'project.configure',name:'不应覆盖'}]}});assert.equal(stale.isError,true);assert.equal(stale.structuredContent.status,409);assert.equal((await call('flexhmi_state')).revision,fresh.revision);
+  const source=await call('flexhmi_state'),copy=structuredClone(source.project);copy.id='mcp_saved';copy.name='MCP 保存工程';
+  const create=await call('flexhmi_preview',{expectedRevision:source.revision,summary:'新建可切换工程',operations:[{op:'project.create',project:copy}]});await call('flexhmi_apply',{planId:create.id});
+  let inventory=await call('flexhmi_projects');const original=inventory.projects.find(p=>p.id===source.project.id);assert.ok(original.revision);
+  const activeSaved=inventory.projects.find(p=>p.active),rejectedDelete=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:(await call('flexhmi_state')).revision,summary:'不能删除运行工程',operations:[{op:'project.delete',id:activeSaved.id,expectedSavedRevision:activeSaved.revision}]}});assert.equal(rejectedDelete.isError,true);assert.match(rejectedDelete.structuredContent.error,/当前运行/);
+  assert.equal((await call('flexhmi_project',{id:copy.id})).project.name,copy.name);
+  const load=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'回到原工程',operations:[{op:'project.load',id:original.id,expectedSavedRevision:original.revision}]});await call('flexhmi_apply',{planId:load.id});assert.equal((await call('flexhmi_control_status')).state,'manual');
+  const saved=(await call('flexhmi_projects')).projects.find(p=>p.id===copy.id);
+  const deletion=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'归档备用工程',operations:[{op:'project.delete',id:copy.id,expectedSavedRevision:saved.revision}]});await call('flexhmi_apply',{planId:deletion.id});inventory=await call('flexhmi_projects');assert.ok(!inventory.projects.some(p=>p.id===copy.id));const archived=inventory.archives.find(p=>p.id===copy.id);assert.ok(archived);
+  assert.equal((await call('flexhmi_project',{id:archived.archiveId,archived:true})).project.id,copy.id);
+  const restore=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'恢复备用工程',operations:[{op:'project.restore',archiveId:archived.archiveId,expectedSavedRevision:archived.revision}]});await call('flexhmi_apply',{planId:restore.id});assert.equal((await call('flexhmi_state')).project.id,original.id);assert.ok((await call('flexhmi_projects')).projects.some(p=>p.id===copy.id));assert.ok((await call('flexhmi_plans')).data.some(p=>p.id===restore.id&&p.status==='applied'));
+
  }catch(e){e.message+='\n'+log.slice(-2500);throw e}
  finally{await readClient?.close();await client?.close();if(backend&&backend.exitCode===null)await new Promise(r=>{backend.once('exit',r);backend.kill('SIGTERM');setTimeout(()=>{backend.kill('SIGKILL');r()},3000).unref()});fs.rmSync(temp,{recursive:true,force:true});}
 });

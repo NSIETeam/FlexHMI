@@ -1,6 +1,6 @@
-# SimpleHMI 本机 Agent API v1（开发中）
+# FlexHMI 本机 Agent API v1（开发中）
 
-目标是让模型和外部 Agent 使用同一套工程操作语义。当前支持工程和布局计划，不把自由文本当作可执行代码。自然语言模型服务适配已实现，真实模型质量验收待配置；阈值回差控制已可运行；行业知识评估、通用状态机和身份权限尚未完成。mode 切换不会自动启动控制，须显式启动会话。
+目标是让模型和外部 Agent 使用同一套工程操作语义。当前支持工程和布局计划，不把自由文本当作可执行代码。自然语言模型服务适配已实现，真实模型质量验收待配置；阈值回差控制已可运行；行业知识评估已支持带版本引用与实时条件，生产资料库、通用状态机和身份权限尚未完成。mode 切换不会自动启动控制，须显式启动会话。
 
 启动服务后，入口为 `http://127.0.0.1:1881/simplehmi/api`。仅本机与同源请求；不要将此开发接口反向代理到公网。当前 actor 是审计标签，不是经过认证的身份。外部 Agent 可以使用 HTTP 或 `node scripts/agent-cli.cjs`。
 
@@ -22,6 +22,9 @@
 | op | 必需参数 | 行为 |
 |---|---|---|
 | project.create | project | 完整 schemaVersion=1 工程；必须是第一个操作，原工程保留 |
+| project.load | id, expectedSavedRevision | 加载已保存工程，必须首项；可后接工程编辑，加载会暂停自动控制 |
+| project.delete | id, expectedSavedRevision | 单独计划；将非当前工程移到可恢复归档区，当前通信不变 |
+| project.restore | archiveId, expectedSavedRevision | 单独计划；恢复归档到工程列表，不覆盖同 ID 工程，不激活设备 |
 | project.configure | name 和/或 mode | mode = visualization / intelligent-control / industry-ai |
 | device.upsert | device | 按 id 新增/合并；新增必须有完整设备配置 |
 | device.delete | id | 删除设备与点位，自动清理显示、动作、详情和管线绑定 |
@@ -61,6 +64,27 @@
 
 ## 恢复边界
 
-当前保存 applying 日志与 before 快照；失败尝试恢复先前工程并记录 restored。已应用结果持久化，重启后幂等重复可识别。进程在 applying 期间崩溃的自动恢复仍待完成；此时不能宣称事务完整。过程控制不提供“物理回滚”保证。审计保存在用户工程目录 agent/，文件轮转/权限控制仍待产品化。
+当前保存 applying 日志与 before 快照；失败尝试恢复先前工程并记录 restored。已应用结果持久化，重启后幂等重复可识别。重启时核对 applying 日志与当前保存状态：结果完全匹配则恢复为 applied（不会再执行），否则为 interrupted，需根据当前状态重新预览。归档操作核对源路径消失、目标路径存在和内容哈希；损坏日志保留原件并显示不可读，不阻止其他工程启动。已通过保存前/后 SIGKILL 进程故障注入验证；不是断电、磁盘故障或完整事务回滚保证。过程控制不提供“物理回滚”保证。审计保存在用户工程目录 agent/，文件轮转/权限控制仍待产品化。
 
 控制执行接口、会话授权及运行边界见 [CONTROL.md](CONTROL.md)。
+
+
+## 保存工程与操作历史
+
+- GET `/agent/projects` → `{projects, archives}`。有效条目包含 `revision`；归档另有 `archiveId`，损坏文件会标记 `unavailable`。
+- GET `/agent/projects/:id` → 完整保存工程、文件版本与修改时间；归档使用 `:archiveId?archived=1`。
+- GET `/agent/plans` → 最多 200 条摘要，中断/损坏记录优先，供恢复检查和历史浏览。
+
+加载、删除、恢复都通过 `/agent/plans` 创建预览。`expectedRevision` 校验当前运行工程，操作中的 `expectedSavedRevision` 独立校验目标保存文件；应用时再次核对目标版本或目标不存在。新建 ID 也在预览和应用两次检查。不得用新的版本号强行重放旧意图。
+
+```json
+{
+  "expectedRevision": "当前运行工程的版本",
+  "summary": "加载已审查的供水工程",
+  "operations": [
+    {"op":"project.load","id":"water_supply","expectedSavedRevision":"保存工程列表返回的版本"}
+  ]
+}
+```
+
+删除保留在工程目录 `trash/`，当前不提供永久清空工具。目标仍是当前工程时拒绝删除/恢复覆盖。所有文件操作都纳入串行应用与持久化审计；归档/恢复不调用运行引擎激活。其他编辑窗口尚未提交的内容不会被 Agent 保存，旧窗口的后续保存会由版本冲突保护。

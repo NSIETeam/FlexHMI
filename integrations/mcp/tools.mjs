@@ -12,7 +12,9 @@ export function buildTools(api,{access='full',physicalWrites=false,agentId='mcp-
  const read=(name,title,description,route,schema=obj())=>add(name,title,description,schema,'read',route);
  read('flexhmi_capabilities','能力与边界','先读取可用操作和当前限制。MCP 权限是当前进程配置，不等于后端多用户认证。','agent/capabilities');
  read('flexhmi_state','工程与版本','读取完整工程和 revision；任何变更必须使用这个版本，冲突后重新读取和规划。','agent/state');
- read('flexhmi_projects','本地工程列表','读取工程摘要；保留其他已保存工程，不擅自删除。','projects');
+ read('flexhmi_projects','本地工程列表','读取保存工程和可恢复归档列表，包含每项 revision。加载/删除/恢复必须通过 preview 并携带 expectedSavedRevision。','agent/projects');
+ read('flexhmi_project','读取保存工程或归档','检查完整工程与保存版本，不切换当前运行工程。归档时 id 使用 archiveId。',a=>'agent/projects/'+a.id+(a.archived?'?archived=1':''),obj({id,archived:{type:'boolean'}},['id']));
+ read('flexhmi_plans','计划历史与中断状态','读取最近计划摘要，发现中断后先读具体计划、实时状态及工程列表；不要盲目重放。','agent/plans');
  read('flexhmi_values','实时数据','返回值、采样时刻、质量、设备状态与自动控制状态。失效值不得用于判断或写入。','values');
  read('flexhmi_history','点位历史','读取当前服务会话中的历史缓存，不能把它视为持久化工艺档案。',a=>'history/'+a.tagId,obj({tagId:id}));
  read('flexhmi_schema','工程操作契约','读取完整计划 JSON Schema；新增对象须满足完整字段要求，upsert 合并已有对象。','agent/schema');
