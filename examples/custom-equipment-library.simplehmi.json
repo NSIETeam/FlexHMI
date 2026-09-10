@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "99a98c01b597",
+  "name": "产品化验收 · 图形与对齐",
+  "devices": [
+    {
+      "id": "97a92da427b7",
+      "name": "1号设备",
+      "protocol": "sim",
+      "host": "127.0.0.1",
+      "port": 502,
+      "unitId": 1,
+      "polling": 1000,
+      "timeout": 2000,
+      "tags": [
+        {
+          "id": "d6907f7b7184",
+          "name": "过滤压差",
+          "address": 1,
+          "type": "UInt16",
+          "memory": "400000",
+          "divisor": 1,
+          "unit": "kPa",
+          "initial": 50,
+          "sim": "wave",
+          "writable": false
+        }
+      ]
+    }
+  ],
+  "activePageId": "529fb25e6474",
+  "pages": [
+    {
+      "id": "529fb25e6474",
+      "name": "画面 1",
+      "width": 1024,
+      "height": 640,
+      "background": "#ffffff",
+      "components": [
+        {
+          "id": "20a4d40b1a08",
+          "kind": "symbol",
+          "assetId": "proceng-centrifugal",
+          "x": 100,
+          "y": 260,
+          "w": 152,
+          "h": 156,
+          "label": "离心泵",
+          "tagId": "",
+          "color": "#247dab",
+          "unit": ""
+        },
+        {
+          "id": "626eb7d25851",
+          "kind": "symbol",
+          "assetId": "proceng-valveax",
+          "x": 430,
+          "y": 260,
+          "w": 152,
+          "h": 156,
+          "label": "通用阀门",
+          "tagId": "",
+          "color": "#247dab",
+          "unit": ""
+        },
+        {
+          "id": "bf607a63eba0",
+          "kind": "symbol",
+          "assetId": "proceng-tank1",
+          "x": 760,
+          "y": 260,
+          "w": 152,
+          "h": 156,
+          "label": "储罐 1",
+          "tagId": "",
+          "color": "#247dab",
+          "unit": ""
+        },
+        {
+          "id": "8897c14af373",
+          "kind": "symbol",
+          "assetId": "custom_3ccaa056352b",
+          "x": 100,
+          "y": 100,
+          "w": 152,
+          "h": 156,
+          "label": "customer-filter",
+          "tagId": "d6907f7b7184",
+          "color": "#247dab",
+          "unit": ""
+        }
+      ]
+    }
+  ],
+  "customSymbols": [
+    {
+      "id": "custom_3ccaa056352b",
+      "name": "customer-filter",
+      "group": "自定义",
+      "keywords": "custom",
+      "svgData": "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTYwIDEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSIyMCIgeT0iMTUiIHdpZHRoPSIxMjAiIGhlaWdodD0iODUiIHJ4PSIxMiIgZmlsbD0iI2U4ZjJmZiIgc3Ryb2tlPSIjMjc2NGRkIiBzdHJva2Utd2lkdGg9IjQiLz48cGF0aCBkPSJNNDUgMzB2NTBtMjAtNTB2NTBtMjAtNTB2NTBtMjAtNTB2NTAiIHN0cm9rZT0iIzI3NjRkZCIgc3Ryb2tlLXdpZHRoPSI0Ii8+PC9zdmc+"
+    }
+  ]
+}

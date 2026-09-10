@@ -1,0 +1,18 @@
+{
+  "name": "flexhmi",
+  "version": "0.3.0",
+  "private": true,
+  "description": "基于 FUXA 的中文极简工控组态 MVP",
+  "license": "MIT",
+  "scripts": {
+    "setup": "npm ci --prefix server && npm ci --prefix client",
+    "start": "node scripts/start.cjs",
+    "build": "node scripts/check.cjs && npm run build --prefix client -- --configuration production",
+    "check": "node scripts/check.cjs",
+    "test": "node --test tests/integration.cjs tests/waste-simulation.cjs tests/layout.cjs tests/agent.cjs tests/water-simulation.cjs tests/ai.cjs tests/control.cjs tests/knowledge.cjs tests/ipc-launcher.cjs",
+    "modbus:sim": "node scripts/modbus-simulator.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

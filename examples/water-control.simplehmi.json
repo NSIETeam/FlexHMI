@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "id": "water_control_demo",
+  "name": "双水箱供水 · 守恒模拟",
+  "simulation": "water-transfer",
+  "system": {
+    "mode": "intelligent-control"
+  },
+  "devices": [
+    {
+      "id": "supply",
+      "name": "双水箱过程模拟",
+      "protocol": "sim",
+      "host": "127.0.0.1",
+      "port": 502,
+      "unitId": 1,
+      "polling": 1000,
+      "timeout": 2000,
+      "tags": [
+        {
+          "id": "source_level",
+          "name": "原水箱液位",
+          "address": 1,
+          "initial": 65,
+          "unit": "%",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "destination_level",
+          "name": "高位水箱液位",
+          "address": 3,
+          "initial": 30,
+          "unit": "%",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "pump_command",
+          "name": "供水泵启停命令",
+          "address": 5,
+          "initial": 0,
+          "unit": "",
+          "type": "Bool",
+          "memory": "0",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": true
+        },
+        {
+          "id": "pump_running",
+          "name": "供水泵实际运行",
+          "address": 6,
+          "initial": 1,
+          "unit": "",
+          "type": "Bool",
+          "memory": "0",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "transfer_flow",
+          "name": "输送流量",
+          "address": 7,
+          "initial": 36,
+          "unit": "m³/h",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "source_volume",
+          "name": "原水箱水量",
+          "address": 9,
+          "initial": 3.25,
+          "unit": "m³",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "destination_volume",
+          "name": "高位水箱水量",
+          "address": 11,
+          "initial": 0.9,
+          "unit": "m³",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "total_volume",
+          "name": "系统总水量",
+          "address": 13,
+          "initial": 4.15,
+          "unit": "m³",
+          "type": "Float32",
+          "memory": "400000",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "source_low",
+          "name": "原水箱低水位停泵",
+          "address": 15,
+          "initial": 0,
+          "unit": "",
+          "type": "Bool",
+          "memory": "0",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        },
+        {
+          "id": "destination_high",
+          "name": "高位水箱高水位停泵",
+          "address": 16,
+          "initial": 0,
+          "unit": "",
+          "type": "Bool",
+          "memory": "0",
+          "divisor": 1,
+          "sim": "manual",
+          "writable": false
+        }
+      ]
+    }
+  ],
+  "activePageId": "overview",
+  "pages": [
+    {
+      "id": "overview",
+      "name": "工艺总览",
+      "width": 1280,
+      "height": 720,
+      "background": "#ffffff",
+      "components": [
+        {
+          "id": "heading",
+          "kind": "text",
+          "label": "双水箱供水",
+          "x": 56,
+          "y": 28,
+          "w": 450,
+          "h": 45,
+          "color": "#343c43"
+        },
+        {
+          "id": "principle",
+          "kind": "text",
+          "label": "封闭输送：无外部进水 / 用水。泵运行时，原水箱减少，高位水箱增加。",
+          "x": 56,
+          "y": 79,
+          "w": 1160,
+          "h": 40,
+          "color": "#343c43",
+          "fontSize": 17
+        },
+        {
+          "id": "tank_1",
+          "kind": "tank",
+          "label": "原水箱 · 容量 5 m³",
+          "x": 100,
+          "y": 155,
+          "w": 210,
+          "h": 240,
+          "tagId": "source_level",
+          "color": "#343c43",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "pump_1",
+          "kind": "pump",
+          "label": "供水泵",
+          "x": 493,
+          "y": 170.089,
+          "w": 185,
+          "h": 190,
+          "tagId": "pump_running",
+          "color": "#343c43"
+        },
+        {
+          "id": "tank_2",
+          "kind": "tank",
+          "label": "高位水箱 · 容量 3 m³",
+          "x": 860,
+          "y": 155,
+          "w": 210,
+          "h": 240,
+          "tagId": "destination_level",
+          "color": "#343c43",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "pump_switch",
+          "kind": "switch",
+          "label": "供水泵启停",
+          "x": 485,
+          "y": 407,
+          "w": 215,
+          "h": 60,
+          "tagId": "pump_command",
+          "color": "#343c43",
+          "action": "toggle"
+        },
+        {
+          "id": "source_amount",
+          "kind": "number",
+          "label": "原水箱水量",
+          "x": 85,
+          "y": 505,
+          "w": 260,
+          "h": 110,
+          "tagId": "source_volume",
+          "color": "#343c43"
+        },
+        {
+          "id": "flow_value",
+          "kind": "number",
+          "label": "当前输送流量",
+          "x": 385,
+          "y": 505,
+          "w": 230,
+          "h": 110,
+          "tagId": "transfer_flow",
+          "color": "#343c43"
+        },
+        {
+          "id": "total_amount",
+          "kind": "number",
+          "label": "系统总水量（恒定）",
+          "x": 655,
+          "y": 505,
+          "w": 250,
+          "h": 110,
+          "tagId": "total_volume",
+          "color": "#343c43"
+        },
+        {
+          "id": "dest_amount",
+          "kind": "number",
+          "label": "高位水箱水量",
+          "x": 945,
+          "y": 505,
+          "w": 250,
+          "h": 110,
+          "tagId": "destination_volume",
+          "color": "#343c43"
+        },
+        {
+          "id": "limits",
+          "kind": "text",
+          "label": "模拟停泵条件：原水箱 ≤ 5% 或高位水箱 ≥ 95%。这是演示模型，不代表已配置 PLC 联锁。",
+          "x": 60,
+          "y": 653,
+          "w": 1160,
+          "h": 30,
+          "color": "#343c43",
+          "fontSize": 15
+        }
+      ],
+      "connections": [
+        {
+          "id": "supply_in",
+          "from": "tank_1",
+          "to": "pump_1",
+          "tagId": "pump_running"
+        },
+        {
+          "id": "supply_out",
+          "from": "pump_1",
+          "to": "tank_2",
+          "tagId": "pump_running"
+        }
+      ]
+    },
+    {
+      "id": "trends",
+      "name": "液位与输送趋势",
+      "width": 1280,
+      "height": 720,
+      "background": "#ffffff",
+      "components": [
+        {
+          "id": "source_chart",
+          "kind": "chart",
+          "label": "原水箱液位 · 输送时下降",
+          "x": 48,
+          "y": 64,
+          "w": 560,
+          "h": 300,
+          "tagId": "source_level",
+          "color": "#343c43"
+        },
+        {
+          "id": "destination_chart",
+          "kind": "chart",
+          "label": "高位水箱液位 · 输送时上升",
+          "x": 660,
+          "y": 64,
+          "w": 560,
+          "h": 300,
+          "tagId": "destination_level",
+          "color": "#343c43"
+        },
+        {
+          "id": "flow_chart",
+          "kind": "chart",
+          "label": "输送流量 · 停泵为零",
+          "x": 48,
+          "y": 404,
+          "w": 560,
+          "h": 260,
+          "tagId": "transfer_flow",
+          "color": "#343c43"
+        },
+        {
+          "id": "balance_chart",
+          "kind": "chart",
+          "label": "总水量 · 保持不变",
+          "x": 660,
+          "y": 404,
+          "w": 560,
+          "h": 260,
+          "tagId": "total_volume",
+          "color": "#343c43"
+        }
+      ],
+      "connections": []
+    }
+  ],
+  "control": {
+    "rules": [
+      {
+        "id": "water_level_control",
+        "name": "高位水箱自动补水",
+        "enabled": true,
+        "inputTag": "destination_level",
+        "outputTag": "pump_command",
+        "direction": "low",
+        "onThreshold": 35,
+        "offThreshold": 40,
+        "onValue": 1,
+        "offValue": 0,
+        "outputMin": 0,
+        "outputMax": 1,
+        "holdMs": 1000,
+        "minIntervalMs": 2000,
+        "maxAgeMs": 3500,
+        "guards": [
+          {
+            "tagId": "source_level",
+            "op": "gt",
+            "value": 5
+          }
+        ]
+      }
+    ]
+  }
+}

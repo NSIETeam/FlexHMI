@@ -1,0 +1,13 @@
+✔ two tanks conserve water and move in opposite directions with unequal capacity (1.398959ms)
+✔ stopping holds both tank levels and flow is zero; restarting resumes transfer (0.441875ms)
+✔ full destination and dry source limit exact transfer without creating or losing water (0.093458ms)
+✔ water demo binds separate levels, actual pump feedback and writable command with straight routes (103.05ms)
+✔ first launch and project demo entry use the same physically coupled water model (0.338333ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.435291

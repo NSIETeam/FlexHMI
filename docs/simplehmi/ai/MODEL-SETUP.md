@@ -1,0 +1,48 @@
+# 模型生成与过程模拟（开发中）
+
+## 在软件里配置
+
+打开 **AI 工作台 → 模型服务设置**，选择 OpenAI 兼容接口或本机 Ollama，填写服务地址和模型名。
+
+- 兼容接口地址填写 API 根地址（例如服务商的 `https://…/v1`），程序追加 `/chat/completions`。远程连接要求 HTTPS，不跟随重定向。
+- Ollama 地址默认 `http://127.0.0.1:11434`，程序调用 `/api/chat`。模型需由用户预先安装；软件不会自动下载模型。
+- API 密钥只保存在当前后端进程内，关闭服务后需重新填写。磁盘只保存服务类型、地址、模型和 JSON 模式。更换服务地址或类型会清除旧密钥，防止把凭据发往新的服务。
+- 点击生成时，需求与当前工程配置（包含设备地址、变量、页面）发送至所配置服务。普通工程生成不发送实时值、历史采样和图形二进制。行业评估会额外发送明确选中的实时点位和知识条目，提交界面会列出选择。不要在工程标签中放入秘密。
+- 兼容服务默认要求 JSON 输出；服务不支持 `response_format` 时可以关闭该选项，但返回内容仍须是完整 JSON 计划。
+
+填写需求后点击 **生成工程计划**。软件将进行工程校验、依赖修复和布线检查；格式或布线失败会让模型修复一次。最多两次输出，120 秒超时。成功只生成预览，点击 **应用此计划** 才会修改工程。
+
+可以随时取消；关闭工作台也会中止尚在运行的生成请求。旧版本工程生成的计划遇到人工修改后不会自动覆盖新工程。生成任务状态保存在内存，后端重启后需重新生成；已保存预览仍沿用 Agent 计划的持久化规则。
+
+## 外部调用
+
+- `GET /simplehmi/api/agent/schema`：工程计划 JSON Schema（draft-07）。upsert 是部分更新，新增对象仍须完整；后端工程验证和依赖检查最终决定是否可应用。
+- `GET/POST /simplehmi/api/ai/config`：读取非敏感配置 / 保存配置，POST 字段为 provider、baseUrl、model、jsonMode，可选 apiKey。provider 为 `openai-compatible` 或 `ollama`。
+- `POST /simplehmi/api/ai/clear-key`：清除本次服务进程中的密钥。
+- `POST /simplehmi/api/ai/generate`：提交 prompt、expectedRevision、mode，返回任务 ID。
+- `GET /simplehmi/api/ai/jobs/:id`：running / ready / failed / cancelled；ready 包含已经检查的 plan。
+- `POST /simplehmi/api/ai/jobs/:id/cancel`：停止运行中的生成任务。
+
+生成不开放任意脚本执行，也不直接调用点位写入。智能控制支持生成阈值规则，应用后须在控制面板显式启动；行业知识评估见 [INDUSTRY.md](INDUSTRY.md)；通用状态机继续开发。详见 [CONTROL.md](CONTROL.md)。
+
+## 修正双水箱示例
+
+旧示例把原水箱和高位水箱绑定到同一个波动变量。这不能表示真实输送过程，已替换为 `simulation: "water-transfer"` 的封闭系统模型。
+
+- 原水箱容量 5 m³，初始 3.25 m³（65%）；高位水箱容量 3 m³，初始 0.90 m³（30%）。无补水、无外部用水。
+- 泵流量 36 m³/h。每个模拟步长一秒，从源箱减去的水量等于目标箱增加的水量，总水量 4.15 m³ 保持不变。
+- 因容量不同，两箱液位百分比变化速度不同：原水箱每秒下降约 0.2 个百分点，高位水箱上升约 0.333 个百分点。
+- 停泵后两箱液位保持，流量归零；恢复启动后继续输送。源箱 ≤ 5% 或目标箱 ≥ 95% 自动停泵，限制单步输送量防止穿过边界。
+- `pump_command` 是可写命令，`pump_running` 是独立的实际运行反馈。液位、水量、流量为过程计算结果。
+- 内部水量保持浮点精度；FUXA 对外值保留两位小数，避免采集格式切换导致停止状态显示微跳。
+- 后端重启或设备配置变化会重置模拟状态。此示例不是已部署到 PLC 的安全联锁，也不模拟泵扬程、惯性、泄漏或阀门曲线。
+
+可在 AI 工作台点击 **生成示例工程计划**，或导入 `examples/water-transfer.simplehmi.json`。普通 `sim.wave` 仅为信号波动；没有内置过程模型的工程会提示尚无物料守恒和设备联动，不能冒充过程仿真。
+
+## 验证边界
+
+本轮 41 项检查通过，包括真实 FUXA 模拟、Modbus TCP 测试从站、双水箱守恒/启停/边界、Agent 版本冲突/幂等，以及本机测试 HTTP 服务验证两种模型请求格式、生成预览、修复、取消、超时和密钥隔离。测试 HTTP 服务是协议夹具，并非真实大语言模型。
+
+真实模型生成质量和用户服务账号尚未验收；没有默认借用环境中的任何密钥。已有 Windows 0.2.0 安装包尚未包含这些修改。
+
+接口依据：[OpenAI Chat Completions](https://developers.openai.com/api/reference/resources/chat)、[Ollama Chat](https://docs.ollama.com/api/chat)。

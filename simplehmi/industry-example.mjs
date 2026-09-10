@@ -1,0 +1,5 @@
+export function waterKnowledge(){return [
+ {id:'water_balance_note',title:'双水箱演示：水量守恒与容量',domain:'供水演示',version:1,source:'SimpleHMI 内置示例设计，server/simplehmi/water-simulation.js；非行业标准',validUntil:null,content:'本条目仅适用于 SimpleHMI 的 water-transfer 模拟模型，不是现场工程标准。原水箱容量为 5 m³，初始水量 3.25 m³；高位水箱容量为 3 m³，初始水量 0.90 m³。封闭系统没有外部补水或用水，总水量恒定为 4.15 m³。泵运行时以 36 m³/h 从原水箱输送到高位水箱，源箱减少量等于目标箱增加量；两箱容量不同，液位百分比变化速度不同。停泵后两箱液位保持不变。'},
+ {id:'water_control_note',title:'双水箱演示：回差启停策略',domain:'供水演示',version:1,source:'SimpleHMI 示例控制策略，simplehmi/water-demo.mjs；阈值为演示参数，非工艺设计建议',validUntil:null,content:'本条目描述供水演示的默认控制策略，不可直接作为现场 PLC 参数。高位水箱液位 ≤ 35% 时启动供水泵，≥ 40% 时停止供水泵。原水箱液位必须 > 5% 才允许启动。控制输入为 destination_level，输出为 pump_command；实际运行反馈为 pump_running。建议演示使用 1000 毫秒条件稳定时间、2000 毫秒最小写入间隔、3500 毫秒数据最长时效。回差区间内保持已确认输出，避免临界点频繁启停。'},
+ {id:'water_limits_note',title:'双水箱演示：适用边界与状态确认',domain:'供水演示',version:1,source:'SimpleHMI 控制器设计，docs/simplehmi/ai/CONTROL.md；不替代现场联锁',validUntil:null,content:'演示过程模型在原水箱液位 ≤ 5% 或高位水箱液位 ≥ 95% 时停止泵流量。模型不包含泵扬程、惯性、泄漏、外部用水或阀门曲线。控制规则变更后保持人工接管，应用计划不等于启动控制。自动写入需要回读一致；输入过期、输出被外部改写或回读失败会中止自动控制。人工接管停止后续自动写入，不自动把当前设备输出改成零。真实设备必须保留独立的现场安全联锁。'}
+]}
