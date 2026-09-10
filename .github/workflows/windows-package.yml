@@ -1,0 +1,53 @@
+name: Windows package acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Draft or published release containing candidate installers
+        required: true
+        default: v0.3.0-ipc-preview
+        type: string
+permissions:
+  contents: read
+jobs:
+  installed-package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            arch: x64
+          - os: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify candidate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = Join-Path $env:RUNNER_TEMP 'flex-candidate'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern "*-Windows-$env:TARGET_ARCH-Setup.exe" --pattern '*IPC-build.json' --dir $dir
+          if($LASTEXITCODE -ne 0){throw 'Release download failed'}
+          $manifest = Get-Content (Join-Path $dir 'FlexHMI-0.3.0-IPC-build.json') -Raw | ConvertFrom-Json
+          $entry = $manifest | Where-Object {$_.arch -eq $env:TARGET_ARCH}
+          $installer=Join-Path $dir $entry.file
+          if((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256){throw 'Installer SHA256 differs from release manifest'}
+          "FLEX_INSTALLER=$installer" >> $env:GITHUB_ENV
+      - name: Install and exercise shipped package
+        shell: pwsh
+        run: ./scripts/windows/verify-installed.ps1 -Installer $env:FLEX_INSTALLER -Arch '${{ matrix.arch }}' -Artifacts '${{ runner.temp }}/flex-evidence'
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-package-${{ matrix.arch }}
+          path: ${{ runner.temp }}/flex-evidence/
+          if-no-files-found: warn
+          retention-days: 14
