@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {mountAi}=require('./ai');
+const {mcpConfiguration}=require('./mcp-config');
 const {validateKnowledgeRevision,citationProblems,assertAssessmentFresh,mountAssessments}=require('./knowledge');
 const clone=x=>JSON.parse(JSON.stringify(x));
 const digest=p=>crypto.createHash('sha256').update(JSON.stringify(p)).digest('hex');
@@ -70,7 +71,7 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
  const audit=e=>fs.appendFileSync(path.join(folder,'audit.jsonl'),JSON.stringify({at:new Date().toISOString(),...e})+'\n');
  const endpoint=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||400).json({error:e.message,code:e.code||'invalid-plan'})}};
  const conflict=()=>{const e=Error('工程已被其他操作修改，请重新读取状态并预览计划');e.status=409;e.code='revision-conflict';throw e};
- router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment'],pending:['verified-model-provider','state-machine-editor','verified-industry-assessment','agent-scopes','mcp-adapter','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
+ router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','state-machine-editor','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
  router.get('/agent/state',endpoint(async(req,res)=>res.json({revision:digest(getProject()),project:getProject()})));
  router.get('/agent/audit',endpoint(async(req,res)=>{const f=path.join(folder,'audit.jsonl');res.json(fs.existsSync(f)?fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).slice(-200).map(x=>JSON.parse(x)):[])}));
  async function previewPlan(request,signal,assessment){const before=clone(getProject()),revision=digest(before);need(typeof request.expectedRevision==='string','请先读取 /agent/state 的 revision');if(request.expectedRevision!==revision)conflict();
@@ -95,5 +96,6 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
   catch(e){p.status='failed';p.error=e.message;try{await activate(before);p.restored=true}catch(restore){p.restored=false;p.restoreError=restore.message}store(p);audit({event:'failed',planId:p.id,error:p.error,restored:p.restored});throw e}
  }))));
  router.post('/agent/plans/:id/cancel',endpoint(async(req,res)=>res.json(await serial(async()=>{const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));need(p.status==='preview','只有未应用计划可以取消');p.status='cancelled';store(p);audit({event:'cancelled',planId:p.id});return {id:p.id,status:p.status}}))));
+ return {audit};
 }
 module.exports={mountAgent,applyOperations,digest,modes};

@@ -41,8 +41,8 @@ try {
   $url=$state.origin+'/simplehmi/';if($mode -eq 'runtime'){$url+='?runtime=1'}
   $profile=Join-Path $env:RUNNER_TEMP "edge-qa-$mode"
   $png=Join-Path $Artifacts "$mode.png";$dom=Join-Path $Artifacts "$mode.html";$err=Join-Path $Artifacts "$mode-edge.log"
-  $args="--headless=new --disable-gpu --no-first-run --no-sandbox --user-data-dir=`"$profile`" --window-size=1440,1000 --virtual-time-budget=5000 --screenshot=`"$png`" --dump-dom `"$url`""
-  $p=Start-Process $edge -ArgumentList $args -RedirectStandardOutput $dom -RedirectStandardError $err -PassThru
+  $edgeArguments="--headless=new --disable-gpu --no-first-run --no-sandbox --user-data-dir=`"$profile`" --window-size=1440,1000 --virtual-time-budget=5000 --screenshot=`"$png`" --dump-dom `"$url`""
+  $p=Start-Process $edge -ArgumentList $edgeArguments -RedirectStandardOutput $dom -RedirectStandardError $err -PassThru
   if(!$p.WaitForExit(60000)){Stop-Process -Id $p.Id -Force;throw "Edge render timed out: $mode"}
   $html=Get-Content $dom -Raw -Encoding UTF8
   if($html -notmatch 'id="canvas"'){throw "Rendered $mode is missing the HMI canvas"}

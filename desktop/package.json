@@ -1,9 +1,9 @@
 {
   "name": "flexhmi-desktop",
-  "productName": "SimpleHMI",
+  "productName": "FlexHMI",
   "version": "0.3.0",
   "main": "main.cjs",
   "description": "中文极简工控组态工作台",
   "license": "MIT",
-  "author": "SimpleHMI contributors"
+  "author": "FlexHMI contributors"
 }

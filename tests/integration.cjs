@@ -10,12 +10,26 @@ test('SimpleHMI real FUXA integration', {timeout:90000}, async t=>{
  try{
  start();await until(async()=> (await request('/status')).data.ready);
  await t.test('simulation runs through FUXA and supports writes',async()=>{await request('/project',project());const first=await until(async()=>{const r=(await request('/values')).data.values.temp;return r.quality==='good'&&r});await sleep(1200);const second=(await request('/values')).data.values.temp;assert.notEqual(first.value,second.value);const write=(await request('/write',{tagId:'coil',value:0})).data;assert.equal(write.verified,true);assert.equal(Number(write.value),0)});
+ await t.test('Agent point write is guarded, verified and audited',async()=>{
+  const state=(await request('/agent/state')).data,q={expectedRevision:state.revision,deviceId:'plc',tagId:'coil',expectedValue:0,observedAt:(await request('/values')).data.values.coil.ts,value:1,outputMin:0,outputMax:1};
+  assert.equal((await request('/agent/write',{...q,expectedRevision:'stale'},false)).status,409);
+  const changed=(await request('/agent/write',q)).data;assert.equal(changed.verified,true);assert.equal(Number(changed.value),1);
+  assert.equal((await request('/agent/write',{...q,value:0},false)).status,409);
+  assert.ok((await request('/agent/audit')).data.some(e=>e.event==='point-write-verified'&&e.tagId==='coil'));
+ });
  await t.test('layout saves and reloads without stopping devices',async()=>{let p=(await request('/project')).data;p.pages[0].components[0].x=160;p.pages[0].components[0].label='已修改温度';await request('/project',p);assert.equal((await request('/project')).data.pages[0].components[0].x,160);assert.ok((await request('/projects')).data.some(x=>x.id==='test'));});
  await t.test('invalid and read-only requests fail honestly',async()=>{assert.equal((await request('/project',{schemaVersion:99},false)).status,400);const p=project();p.devices[0].tags[0].writable=false;await request('/project',p);assert.equal((await request('/write',{tagId:'temp',value:20},false)).status,400)});
  slave=spawn(process.execPath,[path.join(root,'scripts/modbus-simulator.cjs')],{cwd:temp,env:{...process.env,MODBUS_PORT:'1503'},stdio:['ignore','pipe','pipe']});await sleep(700);
  await t.test('connection probe performs a real Modbus read',async()=>{const p=project('ModbusTCP');const {tags,...device}=p.devices[0];const probe=(await request('/test',device)).data;assert.equal(probe.read,236);assert.equal(probe.ok,true)});
  await t.test('failed connection probe returns an error without crashing server',async()=>{const d=project('ModbusTCP').devices[0];d.port=1504;const result=await request('/test',d,false);assert.equal(result.status,400);assert.match(result.data.error,/连接/);assert.equal((await request('/status')).data.ready,true)});
  await t.test('FUXA Modbus reads, writes register with scale, writes coil and verifies readback',async()=>{await request('/project',project('ModbusTCP'));await until(async()=>{const v=(await request('/values')).data.values;return v.temp.quality==='good'&&v.temp.value===23.6});let write=(await request('/write',{tagId:'temp',value:30.5})).data;assert.equal(write.value,30.5);write=(await request('/write',{tagId:'coil',value:0})).data;assert.equal(Number(write.value),0);const Modbus=require('../server/node_modules/modbus-serial');const independent=new Modbus();await independent.connectTCP('127.0.0.1',{port:1503});independent.setID(1);const raw=await independent.readHoldingRegisters(0,1);assert.equal(raw.data[0],305);await new Promise(r=>independent.close(r));});
+ await t.test('Agent physical write requires authorization and matches test slave readback',async()=>{
+  const state=(await request('/agent/state')).data,q={expectedRevision:state.revision,deviceId:'plc',tagId:'coil',expectedValue:0,observedAt:(await request('/values')).data.values.coil.ts,value:1,outputMin:0,outputMax:1};
+  assert.equal((await request('/agent/write',q,false)).status,403);
+  assert.equal((await request('/agent/write',{...q,allowPhysical:true})).data.verified,true);
+  const Modbus=require('../server/node_modules/modbus-serial'),client=new Modbus();await client.connectTCP('127.0.0.1',{port:1503});client.setID(1);assert.equal((await client.readCoils(0,1)).data[0],true);await new Promise(r=>client.close(r));
+  await request('/agent/write',{...q,allowPhysical:true,expectedValue:1,observedAt:(await request('/values')).data.values.coil.ts,value:0});
+ });
  await t.test('automatic Modbus control needs session authorization and verifies actual coil readback',async()=>{
   let p=(await request('/project')).data;p.system={mode:'intelligent-control'};p.control={rules:[{id:'modbus_rule',name:'测试从站联动',enabled:true,inputTag:'temp',outputTag:'coil',direction:'low',onThreshold:31,offThreshold:32,onValue:1,offValue:0,outputMin:0,outputMax:1,holdMs:0,minIntervalMs:1000,maxAgeMs:3500,guards:[]}]};await request('/project',p);
   let state=(await request('/agent/state')).data;assert.equal((await request('/control/arm',{expectedRevision:state.revision},false)).status,400);

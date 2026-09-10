@@ -9,8 +9,10 @@
     "start": "node scripts/start.cjs",
     "build": "node scripts/check.cjs && npm run build --prefix client -- --configuration production",
     "check": "node scripts/check.cjs",
-    "test": "node --test tests/integration.cjs tests/waste-simulation.cjs tests/layout.cjs tests/agent.cjs tests/water-simulation.cjs tests/ai.cjs tests/control.cjs tests/knowledge.cjs tests/ipc-launcher.cjs",
-    "modbus:sim": "node scripts/modbus-simulator.cjs"
+    "test": "node --test tests/integration.cjs tests/waste-simulation.cjs tests/layout.cjs tests/agent.cjs tests/water-simulation.cjs tests/ai.cjs tests/control.cjs tests/knowledge.cjs tests/ipc-launcher.cjs tests/agent-write.cjs",
+    "modbus:sim": "node scripts/modbus-simulator.cjs",
+    "setup:mcp": "npm ci --prefix integrations/mcp",
+    "test:mcp": "npm test --prefix integrations/mcp"
   },
   "engines": {
     "node": ">=18"

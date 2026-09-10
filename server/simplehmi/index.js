@@ -8,6 +8,8 @@ const {stepWater}=require('./water-simulation');
 const {validateKnowledge,validateKnowledgeRevision,searchKnowledge}=require('./knowledge');
 const {validateControl,controlSignature,createControl}=require('./control');
 const {mountAgent,digest}=require('./agent');
+const {checkPointWrite}=require('./agent-write');
+const {mcpConfiguration}=require('./mcp-config');
 const TYPES=new Set(['text','number','button','switch','lamp','motor','pump','valve','tank','pipe','chart','history','alarm','gauge','symbol','equipment','flow','process-status']);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -78,7 +80,7 @@ module.exports=function mount(app,runtime,settings,base=''){
   res.set('Cache-Control','no-store');next();
  });
  router.use(express.json({limit:'3mb'}));
- const route=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(res.statusCode===409?409:400).json({error:e?.message||'无法连接设备或操作失败，请检查配置'})}};
+ const route=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||(res.statusCode===409?409:400)).json({error:e?.message||'无法连接设备或操作失败，请检查配置',...(e.code?{code:e.code}:{}),...(e.outcomeUnknown?{outcomeUnknown:true}:{})})}};
  router.get('/status',route(async(req,res)=>res.json({ready,instance:process.env.SIMPLEHMI_INSTANCE||null,engine:'FUXA 1.3.4',mode:'local',activeProject:active?.id})));
  router.get('/projects',route(async(req,res)=>res.json(fs.readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>{const p=JSON.parse(fs.readFileSync(path.join(dir,f)));return {id:p.id,name:p.name,updatedAt:fs.statSync(path.join(dir,f)).mtime.toISOString()}}))));
  router.get('/project',route(async(req,res)=>res.set('X-Project-Revision',digest(active)).json(active)));
@@ -107,6 +109,19 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
  router.get('/values',route(async(req,res)=>res.json({...snapshotValues(),control:control.summary()})));
  router.get('/history/:id',route(async(req,res)=>res.json(histories.get(req.params.id)||[])));
  router.post('/write',route(async(req,res)=>{control.takeover(req.body.tagId);res.json(await serial(()=>writeValue(req.body.tagId,req.body.value)))}));
+ router.post('/agent/write',route(async(req,res)=>{
+  const q=req.body,actor=String(req.headers['x-flexhmi-agent']||'local-agent').slice(0,100);
+  try{
+   checkPointWrite(active,snapshotValues().values,q);
+   control.takeover(q.tagId);
+   const result=await serial(async()=>{
+    const checked=checkPointWrite(active,snapshotValues().values,q);
+    agentApi.audit({event:'point-write-requested',actor,projectId:active.id,deviceId:q.deviceId,tagId:q.tagId,value:checked.value,previous:checked.previous});
+    try{const out=await writeValue(q.tagId,checked.value);agentApi.audit({event:'point-write-verified',actor,projectId:active.id,tagId:q.tagId,value:out.value});return out}
+    catch(e){agentApi.audit({event:'point-write-failed',actor,projectId:active.id,tagId:q.tagId,error:e.message,outcomeUnknown:true});e.outcomeUnknown=true;throw e}
+   });res.json({...result,control:control.summary(),effect:'已人工接管目标输出；其他设备输出不会被自动复位'});
+  }catch(e){res.status(e.status||400);throw e}
+ }));
  router.get('/control/status',route(async(req,res)=>res.json(control.status())));
  router.get('/control/events',route(async(req,res)=>res.json(control.events())));
  router.post('/control/arm',route(async(req,res)=>res.json(await serial(async()=>{
@@ -124,8 +139,9 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
   if(!client)throw Error('Modbus 驱动依赖未安装');client.init(modbus.ModbusTypes.TCP);client.load(dev);
   let timer;try{await Promise.race([client.connect().catch(()=>{throw Error('无法连接设备，请检查 IP、端口及网络')}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('连接超时')),d.timeout||2000)})]);await client.polling();res.json({ok:true,read,message:read===null?'TCP 已连接，寄存器 1 读取失败；请添加有效点位':'连接成功 · 寄存器 1 当前值：'+read});}finally{clearTimeout(timer);await Promise.race([client.disconnect(),sleep(500)]);}
  }));
+ router.get('/agent/mcp-config',route(async(req,res)=>res.json(mcpConfiguration({port:req.socket.localPort,base,workDir:settings.workDir}))));
  router.get('/knowledge',route(async(req,res)=>res.json({entries:searchKnowledge(active,req.query.q||''),revision:digest(active)})));
- mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,serial,validate,dir});
+ const agentApi=mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,serial,validate,dir});
  router.use((err,req,res,next)=>res.status(400).json({error:err.message}));
  app.use(base+'/simplehmi/api',router);
  app.use(base+'/simplehmi',express.static(staticDir));
