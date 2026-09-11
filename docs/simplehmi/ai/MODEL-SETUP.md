@@ -23,7 +23,7 @@
 - `GET /simplehmi/api/ai/jobs/:id`：running / ready / failed / cancelled；ready 包含已经检查的 plan。
 - `POST /simplehmi/api/ai/jobs/:id/cancel`：停止运行中的生成任务。
 
-生成不开放任意脚本执行，也不直接调用点位写入。智能控制支持生成阈值规则，应用后须在控制面板显式启动；行业知识评估见 [INDUSTRY.md](INDUSTRY.md)；通用状态机继续开发。详见 [CONTROL.md](CONTROL.md)。
+生成不开放任意脚本执行，也不直接调用点位写入。智能控制支持生成阈值规则和步骤流程，应用后须在控制面板显式启动；行业知识评估会为这两类策略附上经过验证的资料引用，详见 [INDUSTRY.md](INDUSTRY.md) 和 [CONTROL.md](CONTROL.md)。
 
 ## 修正双水箱示例
 
@@ -43,6 +43,6 @@
 
 本轮 41 项检查通过，包括真实 FUXA 模拟、Modbus TCP 测试从站、双水箱守恒/启停/边界、Agent 版本冲突/幂等，以及本机测试 HTTP 服务验证两种模型请求格式、生成预览、修复、取消、超时和密钥隔离。测试 HTTP 服务是协议夹具，并非真实大语言模型。
 
-真实模型生成质量和用户服务账号尚未验收；没有默认借用环境中的任何密钥。已有 Windows 0.2.0 安装包尚未包含这些修改。
+真实模型生成质量和用户服务账号尚未验收；没有默认借用环境中的任何密钥。当前已发布桌面版本为 [0.4.2](../releases/0.4.2.md)，上述 41 项为早期验收记录。2026-09-11 的步骤评估引用修复已通过 117 项后端回归，尚未纳入该安装包；源码验证与发布验证分别记录。
 
 接口依据：[OpenAI Chat Completions](https://developers.openai.com/api/reference/resources/chat)、[Ollama Chat](https://docs.ollama.com/api/chat)。

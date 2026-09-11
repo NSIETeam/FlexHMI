@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const {planSchema, systemPrompt} = require('./ai-contract');
-const {evaluationContext,verifyAssessment,assertAssessmentFresh,assessmentPrompt}=require('./knowledge');
+const {evaluationContext,verifyAssessment,assertAssessmentFresh,prepareAssessmentOperations,assessmentPrompt}=require('./knowledge');
 
 function normalizeConfig(input) {
   if (!['openai-compatible', 'ollama'].includes(input.provider)) throw Error('请选择模型服务类型');
@@ -107,8 +107,7 @@ function createAi({dir, getProject, getValues=()=>({}), digest, previewPlan, val
           try {
             const request = parsePlan(output,isAssessment);
             const assessment=isAssessment?verifyAssessment(request,evidence):null;
-            if(assessment)for(const op of request.operations)if(op.op==='rule.upsert'&&op.rule)op.rule.evidence=assessment.citations.map(c=>({entryId:c.entryId,version:c.version}));
-            if(isAssessment&&request.operations.some(o=>['project.create','knowledge.upsert','knowledge.delete'].includes(o.op)))throw Error('评估计划不能同时修改依据或切换工程');
+            if(assessment)request.operations=prepareAssessmentOperations(request.operations,assessment);
             if(isAssessment&&!request.operations.length){if(digest(snapshot)!==digest(getProject())){const e=Error('工程已变化，请重新评估');e.status=409;throw e;}assertAssessmentFresh(assessment,getProject(),getValues());job.report=assessment;job.status='ready';job.stage='评估完成，未提出工程修改';audit({event:'ai-assessed',jobId:job.id});return;}
             const candidate = await validatePlan(snapshot, request);
             if (candidate.blocked) throw Error(candidate.diagnostics.map(x => x.message).join('；'));

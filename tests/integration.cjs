@@ -127,6 +127,61 @@ assert.equal((await request('/control/status')).data.state,'manual');await reque
    const now=(await request('/agent/state')).data;const entry={...now.project.knowledge[1],version:2,content:now.project.knowledge[1].content+' 更新版本需重新评估。'};const update=(await request('/agent/plans',{expectedRevision:now.revision,operations:[{op:'knowledge.upsert',entry}]})).data;assert.ok(update.impacts.some(e=>e.code==='rule-evidence-invalid'));await request('/agent/plans/'+update.id+'/apply',{});assert.equal((await request('/project')).data.control.rules[0].enabled,false);
   }finally{model.close()}
  });
+ await t.test('built-in AI and external assessments preserve step citations through apply, restart and dependent invalidation',async()=>{
+  const {waterDemo}=await import('../simplehmi/water-demo.mjs');
+  const outputFor=context=>{
+   const machine=structuredClone(require('../examples/water-steps.simplehmi.json').control.machines[0]);
+   machine.states[0].transitions[0].conditions[0].value=35;
+   machine.states[0].transitions[0].conditions[0].op='lte';
+   machine.states[1].transitions[0].conditions[0].value=40;
+   machine.evidence=[{entryId:'unverified_model_claim',version:99}];
+   return {summary:'依据演示资料生成补水步骤',operations:[{op:'machine.upsert',machine}],assessment:{
+    conclusion:'将演示供水阈值用于待机、供水、停机步骤，需要审核后启动。',
+    citations:[{entryId:'water_control_note',version:1,excerpt:'高位水箱液位 ≤ 35% 时启动供水泵，≥ 40% 时停止供水泵。'}],
+    conditions:[{tagId:'pump_command',min:Number(context.observed.pump_command.value),max:Number(context.observed.pump_command.value)}]}};
+  };
+  const model=require('node:http').createServer(async(req,res)=>{
+   let body='';for await(const c of req)body+=c;
+   const context=JSON.parse(JSON.parse(body).messages[1].content).evidenceContext;
+   res.setHeader('Content-Type','application/json');
+   res.end(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(outputFor(context))}}]}));
+  });
+  await new Promise(r=>model.listen(0,'127.0.0.1',r));
+  try{
+   for(const via of ['model','external']){
+    const p=waterDemo('industry-ai','cited_steps_'+via);p.control.rules=[];
+    await request('/project',p);
+    await until(async()=> (await request('/values')).data.values.pump_command?.quality==='good');
+    const body={prompt:'依据演示资料生成补水步骤',mode:'industry-ai',expectedRevision:(await request('/agent/state')).data.revision,knowledgeIds:['water_control_note'],observedTagIds:['pump_command']};
+    let plan;
+    if(via==='model'){
+     await request('/ai/config',{provider:'openai-compatible',baseUrl:'http://127.0.0.1:'+model.address().port+'/v1',model:'steps-assessment-fixture'});
+     const job=(await request('/ai/generate',{...body,task:'assess'})).data;
+     const done=await until(async()=>{const j=(await request('/ai/jobs/'+job.id)).data;return j.status!=='running'&&j});
+     assert.equal(done.status,'ready',JSON.stringify(done));plan=done.plan;
+    }else{
+     const context=(await request('/industry/context',body)).data;
+     plan=(await request('/industry/evaluations',{contextId:context.id,...outputFor(context.context)})).data.plan;
+    }
+    const expected=[{entryId:'water_control_note',version:1}];
+    assert.deepEqual(plan.project.control.machines[0].evidence,expected);
+    assert.equal((await request('/project')).data.control.machines,undefined);
+    await request('/agent/plans/'+plan.id+'/apply',{});
+    assert.deepEqual((await request('/project')).data.control.machines[0].evidence,expected);
+    assert.equal((await request('/control/status')).data.state,'manual');
+    await stop(server);start();await until(async()=> (await request('/status')).data.ready);
+    assert.deepEqual((await request('/project')).data.control.machines[0].evidence,expected);
+    assert.deepEqual((await request('/agent/plans/'+plan.id)).data.project.control.machines[0].evidence,expected);
+    assert.equal((await request('/control/status')).data.state,'manual');
+    const current=(await request('/agent/state')).data;
+    const entry={...current.project.knowledge.find(e=>e.id==='water_control_note'),version:2};
+    const update=(await request('/agent/plans',{expectedRevision:current.revision,operations:[{op:'knowledge.upsert',entry}]})).data;
+    assert.ok(update.impacts.some(i=>i.code==='machine-disabled'));
+    await request('/agent/plans/'+update.id+'/apply',{});
+    assert.equal((await request('/project')).data.control.machines[0].enabled,false);
+   }
+  }finally{model.close()}
+ });
  await t.test('cross-origin mutation is rejected',async()=>{const r=await fetch('http://127.0.0.1:1882/simplehmi/api/project',{method:'POST',headers:{Origin:'https://example.invalid','Content-Type':'application/json'},body:JSON.stringify(project())});assert.equal(r.status,403)});
  }catch(e){console.error(log.slice(-12000));throw e}finally{await stop(server);await stop(slave);fs.rmSync(temp,{recursive:true,force:true})}
 });

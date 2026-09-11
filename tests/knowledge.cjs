@@ -1,6 +1,43 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {validate}=require('../server/simplehmi');const {applyOperations,digest}=require('../server/simplehmi/agent');const {createAi}=require('../server/simplehmi/ai');
 const {validateKnowledge,validateKnowledgeRevision,searchKnowledge,evaluationContext,verifyAssessment,assertAssessmentFresh,citationProblems}=require('../server/simplehmi/knowledge');
+
+test('model-generated steps inherit verified citations and stop when their basis changes or expires', async t => {
+ const {p,values,request}=await fixture();
+ p.control.rules=[];
+ p.knowledge.find(e=>e.id==='water_control_note').validUntil=new Date(Date.now()+60000).toISOString();
+ const machine=structuredClone(require('../examples/water-steps.simplehmi.json').control.machines[0]);
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'flex-assessed-steps-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ let preview;
+ const ai=createAi({dir,getProject:()=>p,getValues:()=>values,digest,audit:()=>{},
+  complete:async(c,k,m)=>JSON.stringify({...report(JSON.parse(m[1].content).evidenceContext),operations:[{op:'machine.upsert',machine}]}),
+  validatePlan:(before,r)=>applyOperations(before,r,validate),
+  previewPlan:async(r,signal,a)=>(preview={...await applyOperations(p,r,validate),assessment:a})});
+ ai.configure({provider:'ollama',baseUrl:'http://127.0.0.1:11434',model:'test-fixture'});
+ const job=ai.start({...request,task:'assess',mode:'industry-ai',expectedRevision:digest(p)});
+ await ai.wait(job.id);
+ assert.equal(ai.get(job.id).status,'ready',JSON.stringify(ai.get(job.id)));
+ const generated=preview.project.control.machines[0];
+ assert.deepEqual(generated.evidence,[{entryId:'water_control_note',version:1}]);
+ assert.equal(p.control.machines,undefined,'preview must not modify the source project');
+ const entry=preview.project.knowledge.find(e=>e.id==='water_control_note');
+ for(const operation of [{op:'knowledge.upsert',entry:{...entry,version:2}},{op:'knowledge.delete',id:entry.id}]){
+  const changed=await applyOperations(preview.project,{operations:[operation]},validate);
+  assert.equal(changed.project.control.machines[0].enabled,false);
+  assert.ok(changed.impacts.some(i=>i.code==='machine-disabled'));
+ }
+ let time=Date.now(),writes=0;
+ values.pump_command={value:0,ts:time,quality:'good'};
+ const control=require('../server/simplehmi/control').createControl({dir,getProject:()=>preview.project,readValues:()=>values,now:()=>time,writeValue:async()=>{writes++;return {verified:true}}});
+ control.arm();
+ time=Date.parse(entry.validUntil)+1;
+ for(const value of Object.values(values))value.ts=time;
+ await control.tick();
+ assert.equal(control.status().state,'fault');
+ assert.match(control.status().reason,/依据.*过期/);
+ assert.equal(writes,0);
+});
 async function fixture(){const {waterDemo}=await import('../simplehmi/water-demo.mjs');const p=waterDemo('industry-ai','industry_test');const values={destination_level:{value:30,ts:Date.now(),quality:'good'},source_level:{value:65,ts:Date.now(),quality:'good'}};return {p,values,request:{prompt:'评估高位水箱补水启停策略',knowledgeIds:['water_control_note'],observedTagIds:['destination_level','source_level']}}}
 function report(ctx){return {summary:'采用有依据的演示回差策略',operations:[{op:'rule.upsert',rule:{id:'water_level_control',onThreshold:35,offThreshold:40}}],assessment:{conclusion:'根据演示回差策略，低液位具备补水条件；参数仅用于该模拟。',citations:[{entryId:'water_control_note',version:1,excerpt:'高位水箱液位 ≤ 35% 时启动供水泵，≥ 40% 时停止供水泵。'}],conditions:Object.keys(ctx.observed).map(id=>({tagId:id,min:id==='destination_level'?25:60,max:id==='destination_level'?35:70}))}}}
 test('knowledge validation, Chinese retrieval, exact version increments and expired sources',async()=>{const {p,values,request}=await fixture();validate(p);assert.ok(searchKnowledge(p,'液位补水').some(e=>e.id==='water_control_note'));const next=structuredClone(p);next.knowledge[0].content+='修改';assert.throws(()=>validateKnowledgeRevision(p,next),/版本/);next.knowledge[0].version++;assert.doesNotThrow(()=>validateKnowledgeRevision(p,next));p.knowledge[1].validUntil='2000-01-01T00:00:00Z';assert.throws(()=>evaluationContext(p,request,values),/过期/);assert.ok(searchKnowledge(p,'')[1].expired||searchKnowledge(p,'').some(e=>e.expired));const invalid=structuredClone(p);invalid.knowledge[0].version=0;assert.throws(()=>validateKnowledge(invalid),/版本/)});

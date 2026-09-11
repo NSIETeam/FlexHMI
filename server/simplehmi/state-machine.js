@@ -34,8 +34,8 @@ function validateMachines(project,unique,tags,targets){
 function initialRecord(project,m,values,now){const initial=m.states.find(s=>s.id===m.initialState);for(const a of initial.actions)if(!outputEquals(project,a.tagId,values[a.tagId]?.value,a.value))throw Error(`流程“${m.name}”输出与起始步骤不一致，请先人工核对并调整`);return {stateId:initial.id,stateName:initial.name,enteredAt:now,lastTransitionAt:0,pending:null,pendingSince:0,writes:0,transitions:0,expectedOutputs:Object.fromEntries(initial.actions.map(a=>[a.tagId,a.value])),lastMessage:'已接管，等待步骤条件'};}
 async function tickMachine(m,record,{project,readValues,fresh,now,audit,writeValue,isCurrent,fault}){
  const fail=message=>fault(`流程“${m.name}”${message}`,m.id),refs=references(m);
- function inspect(){const values=readValues();if(refs.some(id=>!fresh(values,id,m.maxAgeMs))){fail('数据失效，停止后续自动写入；当前输出需人工核对');return null}if(Object.entries(record.expectedOutputs).some(([id,v])=>!outputEquals(project,id,values[id].value,v))){fail('输出被外部修改，已退出自动控制');return null}if(!m.guards.every(g=>compare(Number(values[g.tagId].value),g.op,g.value))){fail('运行允许条件不满足，已停止后续写入；当前输出需人工核对');return null}return values}
- const problems=citationProblems(project,m,now());if(problems.length){fail(problems.join('；'));return}
+ function evidenceCurrent(){const problems=citationProblems(project,m,now());if(problems.length){fail(problems.join('；')+'；停止后续写入，已执行输出需人工核对');return false}return true}
+ function inspect(){if(!evidenceCurrent())return null;const values=readValues();if(refs.some(id=>!fresh(values,id,m.maxAgeMs))){fail('数据失效，停止后续自动写入；当前输出需人工核对');return null}if(Object.entries(record.expectedOutputs).some(([id,v])=>!outputEquals(project,id,values[id].value,v))){fail('输出被外部修改，已退出自动控制');return null}if(!m.guards.every(g=>compare(Number(values[g.tagId].value),g.op,g.value))){fail('运行允许条件不满足，已停止后续写入；当前输出需人工核对');return null}return values}
  const values=inspect();if(!values)return;const state=m.states.find(s=>s.id===record.stateId);
  if(state.timeoutMs&&now()-record.enteredAt>=state.timeoutMs){fail(`步骤“${state.name}”超时，已停止后续写入`);return}
  const eligible=t=>now()-record.enteredAt>=t.afterMs&&t.conditions.every(g=>compare(Number(values[g.tagId].value),g.op,g.value));
@@ -54,6 +54,6 @@ async function tickMachine(m,record,{project,readValues,fresh,now,audit,writeVal
   try{const result=await writeValue(action.tagId,action.value);if(!result?.verified||!outputEquals(project,action.tagId,result.value,action.value))throw Error('写入未通过回读验证');verifiedWrites++;audit({event:'write-verified',machineId:m.id,tagId:action.tagId,value:result.value});if(!isCurrent())return;record.expectedOutputs[action.tagId]=action.value;record.writes++;}
   catch(e){if(isCurrent())fail(`步骤切换写入失败：${e.message}；本次已有 ${verifiedWrites} 项写入验证，设备输出不回滚`);return}
  }
- if(!isCurrent())return;record.stateId=target.id;record.stateName=target.name;record.enteredAt=now();record.lastTransitionAt=now();record.pending=null;record.transitions++;record.lastMessage='已进入“'+target.name+'”，输出已回读';audit({event:'transition-completed',machineId:m.id,from:state.id,to:target.id,verifiedWrites});
+ if(!isCurrent()||!evidenceCurrent())return;record.stateId=target.id;record.stateName=target.name;record.enteredAt=now();record.lastTransitionAt=now();record.pending=null;record.transitions++;record.lastMessage='已进入“'+target.name+'”，输出已回读';audit({event:'transition-completed',machineId:m.id,from:state.id,to:target.id,verifiedWrites});
 }
 module.exports={validateMachines,outputs,references,initialRecord,tickMachine,outputEquals};
