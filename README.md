@@ -289,3 +289,5 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 新增 8 项连接回归，并用独立 Chrome 完成实际页面操作。测试步骤见 [浏览器验收](integrations/browser/README.md)。所有测试工程均隔离；图形连接不自动定义物理仿真或 PLC 控制逻辑。
 
 后续源码已加强 AI/Agent 引用校验与编辑计划后的预览失效，130 项后端与 4 项 MCP 检查通过；不包含在 0.4.3 安装包，见 [验收记录](docs/simplehmi/ai/reference-integrity/README.md)。
+
+后续源码修正报警配置与数据无效时的显示，以及带管线画面连续编辑属性失效的问题。132 项后端及报警/编辑浏览器验收通过；尚未进入 0.4.3，见 [验收记录](docs/simplehmi/ai/alarm-verification/README.md)。

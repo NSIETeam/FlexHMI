@@ -110,6 +110,7 @@ async function applyOperations(before,request,validate,store,history){
  }
  if(JSON.stringify([p.id,p.devices,p.simulation])!==JSON.stringify([before.id,before.devices,before.simulation]))impacts.push({code:'runtime-restart',message:'设备配置变化将重启 FUXA 通信；当前历史缓存和模拟手动值会重置'});
  if(p.devices.some(d=>d.protocol==='sim')&&!['water-transfer','waste-to-energy'].includes(p.simulation))impacts.push({code:'independent-simulation-signals',message:'当前模拟变量是独立信号，未建立物料守恒或设备联动关系，不能用来验证工艺行为'});
+ for(const pg of p.pages)for(const c of pg.components)if(c.kind==='alarm'&&(c.threshold==null||!c.tagId))impacts.push({code:'alarm-unconfigured',entity:c.id,pageId:pg.id,message:'报警组件“'+(c.label||c.id)+'”'+(c.threshold==null?'缺少报警上限':'')+(c.threshold==null&&!c.tagId?'，':'')+(!c.tagId?'未绑定监测变量':'')+'；画面将显示未配置，不能判断报警'});
  if(p.id!==before.id)impacts.push({code:'project-switch',message:'当前运行工程将切换；原工程文件保留'});
  if(JSON.stringify([p.control,p.system?.mode,p.knowledge])!==JSON.stringify([before.control,before.system?.mode,before.knowledge]))impacts.push({code:'control-paused',message:'控制规则、模式或知识资料变化会暂停自动控制；应用计划不会自动启动，须在控制面板重新检查并启动'});
  if(p.system?.mode==='industry-ai')impacts.push({code:'industry-review-required',message:'行业评估可引用本地资料和当前观测生成建议；模型质量与资料适用性须检查，工程计划应用不会自动启动控制'});

@@ -1,0 +1,3 @@
+Error: UI acceptance timed out: 
+    at until ([workspace]/outputs/SimpleHMI/scripts/browser/alarms.cjs:6:134)
+    at async [workspace]/outputs/SimpleHMI/scripts/browser/alarms.cjs:21:44

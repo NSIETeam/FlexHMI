@@ -1,3 +1,4 @@
+import {alarmState} from './alarm-state.mjs';
 import {projectMode, projectModes, modeChoices, styleModeDialog, openProjectMode} from './project-mode.mjs';
 import {showOwnerLogin} from './access-panel.mjs';
 import {openConnectionEditor} from './connection-editor.mjs';
@@ -208,7 +209,8 @@ function changed() {
     for(const c of [...pg.components,...(pg.connections||[])]){for(const k of ['tagId','valueTag'])if(c[k]&&!validTags.has(c[k])){delete c[k];linkedChanges++}if(Array.isArray(c.details))c.details=c.details.filter(d=>{const keep=!(d.tagId||d.tag)||validTags.has(d.tagId||d.tag);if(!keep)linkedChanges++;return keep})}
   }
   if(linkedChanges)toast(`已同步清理 ${linkedChanges} 项关联管线或变量绑定`);
-  state.project.pages=state.project.pages.map(p=>p.connections?.length?routePage(p).page:p);
+  // Routing changes connections only; retain component identities used by property inputs.
+  for(const p of state.project.pages)if(p.connections?.length)p.connections=routePage(p).page.connections;
   state.saved = false;
   dirtyVersion++;
   updateSave();
@@ -476,7 +478,7 @@ function addComponent(kind, x, y, tagId = "") {
     unit: "",
     min: 0,
     max: 100,
-    threshold: 80,
+    threshold: null,
     action: "toggle",
     writeValue: 1,
   };
@@ -893,8 +895,8 @@ function componentContent(c) {
     return `<div class="chart-card"><div class="chart-head">${label}<small>${fmt(v)} ${u}</small></div><div class="chart-plot"><svg viewBox="0 0 260 110" preserveAspectRatio="none">${line ? `<polygon points="0,110 ${line} 260,110" fill="${color}0d"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/>` : '<text x="130" y="60" text-anchor="middle" fill="#9aa8ba" font-size="12">等待采样</text>'}</svg></div><div class="chart-foot"><span>${points.length ? new Date(points[0].time).toLocaleTimeString("zh-CN", { hour12: false }) : "--:--:--"}</span><span>${c.kind === "history" ? "本次运行 · 最多 30 分钟" : "最近 60 秒"}</span></div></div>`;
   }
   if (c.kind === "alarm") {
-    const alarm = v != null && Number(v) >= Number(c.threshold);
-    return `<div class="alarm-card ${alarm ? "alert" : ""}"><div class="chart-head">${label}<small style="font-size:10px;color:#9cabba">阈值 ${esc(c.threshold)}</small></div><div class="alarm-status">${icon(v == null ? "alarm" : alarm ? "alarm" : "check")}${v == null ? "等待有效数据" : alarm ? "超过上限 · " + fmt(v) + " " + u : "运行正常 · 无报警"}</div><span style="font-size:10px;color:#9aa8b8">${esc(tag(c.tagId)?.name || "请绑定监测变量")}</span></div>`;
+    const alarm = alarmState(c, tag(c.tagId), state.values[c.tagId]);
+    return `<div class="alarm-card ${alarm.state === 'active' ? 'alert' : ''}" data-alarm-state="${alarm.state}"><div class="chart-head">${label}<small style="font-size:10px;color:#666">${Number.isFinite(c.threshold) ? '上限 ' + esc(c.threshold) : '上限未配置'}</small></div><div class="alarm-status">${icon(alarm.state === 'normal' ? 'check' : 'alarm')}<span>${esc(alarm.message)}${alarm.value !== undefined ? ' · ' + fmt(alarm.value) + ' ' + u : ''}</span></div><span style="font-size:10px;color:#666">${esc(tag(c.tagId)?.name || '请绑定监测变量')}</span></div>`;
   }
   if (c.kind === "gauge") {
     const ratio =
@@ -972,12 +974,12 @@ function renderProperties() {
             c.textAlign || "left",
           )
         : ""
-    }${["gauge", "tank"].includes(c.kind) ? `<div class="field-row">${field("最小值", "c-min", c.min, "number")}${field("最大值", "c-max", c.max, "number")}</div>` : ""}${c.kind === "alarm" ? field("报警上限", "c-threshold", c.threshold, "number") : ""}`;
+    }${["gauge", "tank"].includes(c.kind) ? `<div class="field-row">${field("最小值", "c-min", c.min, "number")}${field("最大值", "c-max", c.max, "number")}</div>` : ""}${c.kind === "alarm" ? field("报警上限（达到时触发）", "c-threshold", c.threshold, "number", 'step="any" placeholder="请填写上限"') + '<p class="hint">留空表示未配置，不能判断报警。此组件仅显示上限状态，不控制设备。</p>' : ""}`;
     $$("#property-body input,#property-body select").forEach(i=>{
       let recorded=false;
       const commit=()=>{
-        if(!i.checkValidity()||i.value==='')return;
-        const key=i.id.slice(2),value=i.type==='number'?Number(i.value):i.value;
+        if(!i.checkValidity()||(i.value===''&&i.id!=='c-threshold'))return;
+        const key=i.id.slice(2),value=i.id==='c-threshold'&&i.value===''?null:i.type==='number'?Number(i.value):i.value;
         if(c[key]===value)return;
         if(!recorded){snapshot();recorded=true;}
         c[key]=value;c.w=Math.min(c.w,page().width);c.h=Math.min(c.h,page().height);

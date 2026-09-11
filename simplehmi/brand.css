@@ -156,3 +156,12 @@ dialog::backdrop{background:#2a2a2a4d;backdrop-filter:blur(5px)}
 .project-mode-choice>span{display:grid;gap:4px;min-width:0}.project-mode-choice strong{font-size:16px;color:#252b30}.project-mode-choice span>span{font-size:14px;color:#606970;font-weight:400}
 #mode-result:empty{display:none}#mode-result{border-top:1px solid #e3e6e8;margin-top:18px;padding-top:8px;font-size:14px;overflow-wrap:anywhere}#mode-result h3{font-size:16px}#mode-result li{margin:8px 0}
 @media(max-width:640px){.project-mode-dialog .dialog-body{padding:18px}.project-mode-dialog>.dialog-actions{padding:14px 18px}.project-mode-choice{padding:12px}.project-mode-dialog .dialog-head{padding:16px 18px}}
+
+/* Unavailable alarm evidence must not resemble a normal status. */
+.alarm-card[data-alarm-state] .alarm-status {color:#343c43}
+.alarm-card[data-alarm-state] {gap:10px;min-width:0;overflow:auto}
+.alarm-card[data-alarm-state] .chart-head {flex-wrap:wrap;gap:4px}
+.alarm-card[data-alarm-state] .alarm-status span {overflow-wrap:anywhere}
+.alarm-card[data-alarm-state="active"] {border:2px solid #24292e;background:#f3f3f3}
+.alarm-card[data-alarm-state="active"] .alarm-status {font-weight:700}
+.alarm-card[data-alarm-state="unconfigured"],.alarm-card[data-alarm-state="unbound"],.alarm-card[data-alarm-state="waiting"],.alarm-card[data-alarm-state="invalid"] {border-style:dashed;background:#fafafa}

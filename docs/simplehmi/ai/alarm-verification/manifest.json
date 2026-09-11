@@ -1,0 +1,27 @@
+{
+  "sourceSha256": {
+    "simplehmi/alarm-state.mjs": "f70a0025bac7effcea2f7c75c67568f1e59008be3d2364b5aa397bfffa9092ae",
+    "simplehmi/app.js": "29e9278950e197edb76b6944e9f2f117be875f8ad10bd71542c2e67458c02758",
+    "simplehmi/brand.css": "0174bcf20b9261597240dcbe888649cc9a28921cf520867169bd6bd51aadc994",
+    "server/simplehmi/index.js": "7643935e2190607a460c65cabee2dad1dc14eacc765c90316e19daa975d46cd7",
+    "server/simplehmi/agent.js": "a99479ad1d910d1d80b67f291377b418421ef1dd50d459bda41c3d17cf171923",
+    "server/simplehmi/ai-contract.js": "391798d35d6434a4c0980791b5b871178bbec2c46c6c859aa51ff29f41bce3d9",
+    "scripts/browser/alarms.cjs": "dddd7a5cd8a351b98ab367f332af0542a7a7943482688e3f8376d90f1a49cba6",
+    "tests/alarm.cjs": "1936989304cdbbff82b71bbcfad9bcb6ad847acea2cd4ae67f103f5f674b848d",
+    "scripts/check.cjs": "fccea0e7f27beb03eb62be7d03becba3e25bf9795d564544e8125189f962333c",
+    "package.json": "7b76d3f483143e69e2b12c9d7a9350d5334a01c45f5659386cba1807fb10bf87"
+  },
+  "evidenceSha256": {
+    "backend.log": "70155f7a79031afb7ea087f2e2f49c79071d29d668c435a5212e55279ff02e71",
+    "FlexHMI-数据失效报警.png": "c4e913ba6e54c45d2dd89114fca7b40d6c101a9e1392950d8b79bdd4865bc743",
+    "editor-browser.json": "bc5b7fe80cee750f167e670546df6b99cd635ccf06658a916bde717bd4b4849b",
+    "first-browser-failure.log": "e47e6958dc5d4acf4a7253ba46c87a6791131f37ed8a2c016dcb6055ee86cc7a",
+    "alarm-browser.log": "3d6fe254212a90a692d4eed479b6b24b2a5420e69407604938a0ef2f37abb5a9",
+    "alarm-browser.json": "024c741d0ca193a2263816fec3762db135061f6897cf49cc109850fd8c161a5d",
+    "README.md": "40b293941440b25d2764ead7fcca21250b0ca5c7c0bc6808800c5905b8ffb3db",
+    "editor-browser.log": "eea33bf59ec2ca1eb2bb0814490ef793d386c81d2b75b581aef4387d35983963",
+    "live-verification.json": "a3f5f369438eed7279218c8ba0fcc45a7ed5368d9dedd5311bad73ee0483e64f",
+    "FlexHMI-未配置报警.png": "7ccb3830da2b9bd8a41a3b602551b017b69489bf565d0bf0c2f3ba8131304e0e",
+    "FlexHMI-上限报警.png": "ee351a3a9286b907b5c542687685c730e854725cd3801947921e6459d1860916"
+  }
+}
