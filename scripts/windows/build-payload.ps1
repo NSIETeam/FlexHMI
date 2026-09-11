@@ -34,7 +34,7 @@ Get-ChildItem $payload -Recurse -Directory | Sort-Object {$_.FullName.Length} -D
 $lines | Set-Content $uninstall -Encoding UTF8
 $output=Join-Path $OutputDirectory "FlexHMI-$version-Windows-$Arch-Setup.exe"
 $env:NSISDIR=$tools
-& (Join-Path $tools 'Bin/makensis.exe') /V2 "/DPAYLOAD=$payload" "/DPAYLOADGLOB=$payload\*" "/DOUTPUT=$output" "/DARCH=$Arch" "/DVERSION=$version" "/DICON=$root/desktop/icon.ico" "/DLICENSEFILE=$root/LICENSE" "/DUNINSTALLFILES=$uninstall" "$root/desktop/ipc/installer.nsi"
+& (Join-Path $tools 'Bin/makensis.exe') /INPUTCHARSET UTF8 /V2 "/DPAYLOAD=$payload" "/DPAYLOADGLOB=$payload\*" "/DOUTPUT=$output" "/DARCH=$Arch" "/DVERSION=$version" "/DICON=$root/desktop/icon.ico" "/DLICENSEFILE=$root/LICENSE" "/DUNINSTALLFILES=$uninstall" "$root/desktop/ipc/installer.nsi"
 if($LASTEXITCODE -ne 0){throw 'Windows installer build failed'}
 @{arch=$Arch;version=$version;sourceCommit=$commit;wrapper='matched Windows NSIS 3.0.4.1';payloadSHA256=(Get-FileHash $PayloadZip -Algorithm SHA256).Hash.ToLowerInvariant();file=[IO.Path]::GetFileName($output);sha256=(Get-FileHash $output -Algorithm SHA256).Hash.ToLowerInvariant();bytes=(Get-Item $output).Length;mcpIncluded=$true;sourceProvenanceVerified=$true} | ConvertTo-Json | Set-Content "$output.json" -Encoding UTF8
 "FLEX_INSTALLER=$output" >> $env:GITHUB_ENV

@@ -24,6 +24,7 @@ try {
  Execute-Checked $Installer "/S /D=$install" 180
  if(!(Test-Path $exe)){throw 'Installer did not create FlexHMI.exe'}
  $programs=[Environment]::GetFolderPath('Programs')
+ Get-ChildItem $programs -Recurse | Where-Object {$_.FullName -match 'FlexHMI'} | Select-Object FullName | ConvertTo-Json | Set-Content (Join-Path $Artifacts 'installed-shortcuts.json') -Encoding UTF8
  foreach($link in @('编辑工程','运行画面','全屏运行','停止服务','卸载')){if(!(Test-Path (Join-Path $programs "FlexHMI 桌面版/$link.lnk"))){throw "Missing desktop shortcut: $link"}}
  $display=(Get-ItemProperty 'HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/FlexHMI-IPC').DisplayName
  if($display -ne "FlexHMI 桌面版 ($Arch)"){throw 'Installer desktop name mismatch'}
