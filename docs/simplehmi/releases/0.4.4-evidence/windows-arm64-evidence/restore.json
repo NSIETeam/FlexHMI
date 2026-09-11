@@ -1,0 +1,11 @@
+{
+  "platform": "win32",
+  "arch": "arm64",
+  "origin": "http://127.0.0.1:55323",
+  "instance": "329f5d2e-5538-4039-b3fa-b0ee332ba97a",
+  "projectId": "demo",
+  "revision": "e7d57dc36833c3038751b61af8692a41c4c52e3900d36b9243132c61e02fe35f",
+  "controlState": "manual",
+  "pageRestored": true,
+  "bindingRestored": true
+}

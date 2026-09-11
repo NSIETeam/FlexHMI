@@ -1,0 +1,19 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "macOS": "15.7.9",
+  "dmgMounted": true,
+  "installedFromDmg": true,
+  "signatureIntegrity": true,
+  "nativeRuntime": true,
+  "simulation": true,
+  "mcp": true,
+  "persistence": true,
+  "singleInstance": true,
+  "nativeWebKit": true,
+  "upgrade": true,
+  "uninstallPreservesData": true,
+  "developerIdSigned": false,
+  "notarized": false,
+  "physicalHardwareTested": false
+}

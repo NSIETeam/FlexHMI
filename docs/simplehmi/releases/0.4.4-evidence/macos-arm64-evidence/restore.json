@@ -1,0 +1,6 @@
+{
+  "arch": "arm64",
+  "projectId": "demo",
+  "manualAfterRestart": true,
+  "bindingRestored": true
+}

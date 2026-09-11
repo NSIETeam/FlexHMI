@@ -1,0 +1,133 @@
+{
+  "platform": "win32",
+  "arch": "x64",
+  "origin": "http://127.0.0.1:50288",
+  "instance": "3ed908c9-2c34-4ffd-8887-3d9ed1bec566",
+  "pid": 7956,
+  "held": {
+    "source_level": {
+      "value": 64.8,
+      "lastValue": 64.8,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "destination_level": {
+      "value": 30.33,
+      "lastValue": 30.33,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "pump_command": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "pump_running": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "transfer_flow": {
+      "value": 0,
+      "lastValue": 0,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "source_volume": {
+      "value": 3.24,
+      "lastValue": 3.24,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "destination_volume": {
+      "value": 0.91,
+      "lastValue": 0.91,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "total_volume": {
+      "value": 4.15,
+      "lastValue": 4.15,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "source_low": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104826357,
+      "quality": "good"
+    },
+    "destination_high": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104826357,
+      "quality": "good"
+    }
+  },
+  "moving": {
+    "source_level": {
+      "value": 64.4,
+      "lastValue": 64.4,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "destination_level": {
+      "value": 31,
+      "lastValue": 31,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "pump_command": {
+      "value": true,
+      "lastValue": true,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "pump_running": {
+      "value": true,
+      "lastValue": true,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "transfer_flow": {
+      "value": 36,
+      "lastValue": 36,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "source_volume": {
+      "value": 3.22,
+      "lastValue": 3.22,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "destination_volume": {
+      "value": 0.93,
+      "lastValue": 0.93,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "total_volume": {
+      "value": 4.15,
+      "lastValue": 4.15,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "source_low": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104829368,
+      "quality": "good"
+    },
+    "destination_high": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789104829368,
+      "quality": "good"
+    }
+  },
+  "revision": "9a0daa638974dad29266fdbfe11c9a7e061cfd2160f928761878306cc73746f0",
+  "projectId": "demo"
+}

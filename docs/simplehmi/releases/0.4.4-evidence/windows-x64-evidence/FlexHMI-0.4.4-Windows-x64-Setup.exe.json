@@ -1,0 +1,12 @@
+{
+  "version": "0.4.4",
+  "payloadSHA256": "4000b99f54bc21086052c8bdc46117934f1bee03833d924a3c009613eb21b474",
+  "mcpIncluded": true,
+  "sha256": "47fe63f441dba1cabeef5e6a4844c1c93d091852086778db96a19c1d9f4b6556",
+  "arch": "x64",
+  "sourceProvenanceVerified": true,
+  "sourceCommit": "4247f6e5c808850e084e55d5a7a8b00a6f466989",
+  "wrapper": "matched Windows NSIS 3.0.4.1",
+  "bytes": 60145903,
+  "file": "FlexHMI-0.4.4-Windows-x64-Setup.exe"
+}
