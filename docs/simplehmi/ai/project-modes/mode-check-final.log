@@ -1,0 +1,5 @@
+
+> flexhmi@0.4.3 check
+> node scripts/check.cjs
+
+SimpleHMI source and demo checks passed

@@ -1,0 +1,20 @@
+✔ agent deletion repairs all dependent bindings and reports runtime impact (5.962333ms)
+✔ component deletion cascades connections; invalid plans never mutate input (0.610458ms)
+✔ topological layout respects lock and leaves no overlapping nodes (1.881917ms)
+✔ orthogonal routing avoids obstacle and follows moved endpoints (0.990209ms)
+✔ unroutable ports produce a blocking diagnostic, not fake straight lines (0.159458ms)
+✔ mode validation distinguishes available configuration from future execution (0.444125ms)
+✔ different equipment sizes align their visible ports with no gratuitous elbow (0.184416ms)
+✔ reversed and vertical flows point toward destination with the appropriate side (0.854917ms)
+✔ offset horizontal ports use a centered corridor instead of tiny end stubs (0.269167ms)
+✔ manual flow drawings cannot silently disconnect during automatic layout (0.158042ms)
+✔ process optimization preserves unconnected titles, controls and cards while aligning equipment (2.301875ms)
+✔ type conversion preserves the complete engineering configuration and reports executable consequences (9.5385ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 108.859291
