@@ -14,6 +14,16 @@
 
 知识内容被明确作为资料发送给模型，不具有执行指令的优先级。程序验证引用来自所选资料，但不能独立证明模型推理正确；客户仍须审核结论及条件。无改动结论可保存为报告，不制造空变更。
 
+## 查找评估报告
+
+在 **AI 工作台 → 评估记录** 查看本工程的历史评估。可切换全部工程、内置 AI / 外部 Agent，按摘要、结论或资料来源搜索，逐页加载更早记录。无改动报告也自动保存，关闭工作台或重启后端后仍可重开；报告保留当时的出处、版本、采样和适用区间。
+
+有修改建议时，打开记录会重新读取关联计划的最新状态，已应用、取消或过期的计划不会作为新建议直接执行。报告的保存不会延长采样有效期。旧版外部评估没有记录工程编号的，在“全部工程”下标为旧记录；损坏文件会提示检查备份，不静默丢弃。
+
+记录位于用户工程目录的 `assessments/evaluation_*.json`。本轮没有增加自动删除或留存清理；长期使用应将此目录纳入备份。该功能和上一轮步骤引用修复尚未进入 0.4.2 安装包。
+
+验收：完整后端 118 项、MCP 4 项以及既有编辑器浏览器流程通过；新增浏览器流程实际生成报告、重启后端、找回记录，并验证 25 条记录的翻页和计划最新状态。[浏览器证据](assessment-history/assessment-browser.json)、[评估记录截图](assessment-history/FlexHMI-评估记录搜索.png)、[后端测试](assessment-history-regression.txt)。模型使用本机协议夹具，真实推理质量仍待验证。
+
 ## 外部 Agent
 
 以 `/simplehmi/api` 为根路径：
@@ -22,8 +32,9 @@
 - `POST /industry/context`：`expectedRevision`、`prompt`、`knowledgeIds`、`observedTagIds`。生成可信采样上下文和 context ID，有效期三分钟。
 - `POST /industry/evaluations`：`contextId`、`summary`、`operations`、`assessment`。assessment 包含 conclusion、citations（entryId/version/excerpt）和 conditions（tagId/min/max）。每个观察点位都必须给出包含采样值的适用范围。
 - `GET /industry/evaluations/:id` 获取持久化评估。非空操作生成普通预览计划，再使用既有 `/agent/plans/:id/apply` 路径应用。
+- `GET /industry/evaluations` 搜索已保存评估。参数：`projectId`、`source`（model / external）、`q`（最多 500 字）、`limit`（1–100，默认 20）、`cursor`。返回 `{records,nextCursor,unreadable}`，nextCursor 为 null 表示末页。列表只返回摘要，不携带完整采样；详情用单记录接口读取。
 - UI 的“打开已有结果”接受 `evaluation_...` 和 `plan_...`，可审阅外部 Agent 的建议后应用。
-- CLI 提供 `knowledge`、`context`、`assess`、`assessment`、`control`、`arm`、`pause` 子命令。
+- CLI 提供 `knowledge`、`context`、`assess`、`assessment`、`assessments [query]`、`control`、`arm`、`pause` 子命令；MCP 新增只读工具 `flexhmi_assessments`。
 
 普通计划不能自称为经过验证的评估：可信 assessment 只能由验证入口附加。评估计划不能同时切换、删除或恢复工程，也不能改写知识资料。内置 AI 和外部 Agent 使用同一处理入口，为 `rule.upsert` 与 `machine.upsert` 自动附上经过验证的引用，覆盖模型自行填写的证据字段。
 

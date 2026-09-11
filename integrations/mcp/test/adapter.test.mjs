@@ -25,7 +25,7 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
  try{
   backend=spawn(process.execPath,[path.join(root,'server/main.js')],{cwd:temp,env:{...process.env,SIMPLEHMI:'1',PORT:String(port),userDir:temp},stdio:['ignore','pipe','pipe']});backend.stdout.on('data',b=>log+=b);backend.stderr.on('data',b=>log+=b);
   await until(async()=> (await(await fetch(`http://127.0.0.1:${port}/simplehmi/api/status`)).json()).ready);
-  client=await connect();const listed=await client.listTools();assert.equal(listed.tools.length,23);assert.equal((await client.listResources()).resources.length,4);
+  client=await connect();const listed=await client.listTools();assert.equal(listed.tools.length,24);assert.equal((await client.listResources()).resources.length,4);
   const guide=await client.readResource({uri:'flexhmi://guide'});assert.match(guide.contents[0].text,/expectedRevision/);
   const prompt=await client.getPrompt({name:'build_system',arguments:{requirement:'双水箱供水画面',mode:'visualization'}});assert.match(prompt.messages[0].content.text,/双水箱/);
   const before=await call('flexhmi_state');
@@ -47,7 +47,7 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   const revert=await call('flexhmi_preview',{expectedRevision:changed.revision,summary:'恢复临时修改前工程',operations:[{op:'project.revert',planId:temporary.id}]});assert.equal(revert.pauseControl,true);assert.equal(revert.revertsPlanId,temporary.id);assert.equal((await call('flexhmi_control_status')).state,'automatic');await call('flexhmi_apply',{planId:revert.id});assert.equal((await call('flexhmi_control_status')).state,'manual');assert.equal((await call('flexhmi_state')).revision,seeded.revision);
   const context=await call('flexhmi_assessment_context',{expectedRevision:seeded.revision,prompt:'依据演示资料核验总水量',knowledgeIds:['mcp_evidence'],observedTagIds:['total_volume']});
   const evaluation=await call('flexhmi_evaluate',{contextId:context.id,summary:'引用守恒资料的 MCP 评估',operations:[{op:'project.configure',name:'MCP 行业评估已应用'}],assessment:{conclusion:'当前总水量符合本演示的守恒值，不代表现场认证。',citations:[{entryId:'mcp_evidence',version:1,excerpt:'总水量恒定为 4.15 m³。'}],conditions:[{tagId:'total_volume',min:4.14,max:4.16}]}});
-  assert.equal(evaluation.status,'preview');assert.equal((await call('flexhmi_assessment',{evaluationId:evaluation.id})).id,evaluation.id);await call('flexhmi_apply',{planId:evaluation.plan.id});assert.equal((await call('flexhmi_state')).project.name,'MCP 行业评估已应用');
+  assert.equal(evaluation.status,'preview');const records=await call('flexhmi_assessments',{projectId:seeded.project.id,source:'external',limit:1});assert.equal(records.records[0].id,evaluation.id);assert.equal(records.records[0].hasPlan,true);assert.equal(records.nextCursor,null);const readRecords=await readClient.callTool({name:'flexhmi_assessments',arguments:{q:evaluation.summary}});assert.equal(readRecords.isError,undefined);assert.equal((await call('flexhmi_assessment',{evaluationId:evaluation.id})).id,evaluation.id);await call('flexhmi_apply',{planId:evaluation.plan.id});assert.equal((await call('flexhmi_state')).project.name,'MCP 行业评估已应用');
   const fresh=await call('flexhmi_state'),stale=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:before.revision,summary:'过期计划',operations:[{op:'project.configure',name:'不应覆盖'}]}});assert.equal(stale.isError,true);assert.equal(stale.structuredContent.status,409);assert.equal((await call('flexhmi_state')).revision,fresh.revision);
   const source=await call('flexhmi_state'),copy=structuredClone(source.project);copy.id='mcp_saved';copy.name='MCP 保存工程';
   const create=await call('flexhmi_preview',{expectedRevision:source.revision,summary:'新建可切换工程',operations:[{op:'project.create',project:copy}]});await call('flexhmi_apply',{planId:create.id});
@@ -87,5 +87,5 @@ test('MCP starts when the entrypoint is opened through a symlink',async()=>{
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'flex-mcp-link-')),entry=path.join(temp,'server.mjs');
  fs.symlinkSync(path.join(root,'integrations/mcp/server.mjs'),entry);
  const client=new Client({name:'symlink-qa',version:'1.0.0'});
- try{await client.connect(new StdioClientTransport({command:process.execPath,args:[entry],env:{...process.env,FLEXHMI_ACCESS:'full'},stderr:'pipe'}));assert.equal((await client.listTools()).tools.length,23)}finally{await client.close();fs.rmSync(temp,{recursive:true,force:true})}
+ try{await client.connect(new StdioClientTransport({command:process.execPath,args:[entry],env:{...process.env,FLEXHMI_ACCESS:'full'},stderr:'pipe'}));assert.equal((await client.listTools()).tools.length,24)}finally{await client.close();fs.rmSync(temp,{recursive:true,force:true})}
 });

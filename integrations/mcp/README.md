@@ -7,7 +7,7 @@
 1. 按根目录 README 安装并启动 FlexHMI。
 2. 在仓库根目录运行 `npm run setup:mcp`。
 3. 打开 AI 工作台 → 连接外部 Agent，选择操作范围并复制配置，添加到支持 MCP stdio 的客户端。
-4. 重新连接客户端。应发现 23 个工具（完整范围）、4 个资源与 `build_system` 提示模板。
+4. 重新连接客户端。应发现 24 个工具（完整范围）、4 个资源与 `build_system` 提示模板。
 
 也可以手动配置。路径必须替换成当前机器的绝对路径；Windows JSON 中反斜杠需要转义。直接以 Node 启动，避免 npm 启动横幅混入协议输出。
 
@@ -62,9 +62,13 @@
 工程历史恢复：先调用 `flexhmi_plans` / `flexhmi_plan` 检查来源，再用 `flexhmi_preview` 单项操作 `project.revert`（planId）生成恢复计划。检查全部覆盖内容后 `flexhmi_apply`；自动控制保持暂停，不回滚设备输出，资料恢复采用新版本。
 
 
-步骤流程通过 `flexhmi_preview` 中的 `machine.upsert {machine}` / `machine.delete {id}` 操作，再经 `flexhmi_apply` 保存；工具数量仍为 23。完整模型见 [控制文档](../../docs/simplehmi/ai/CONTROL.md)。`flexhmi_control_status.machines` 返回当前步骤、跳转次数和已验证写入次数。保存不启动；`flexhmi_control_arm` 要求初始输出一致、全部引用新鲜、允许条件和依据有效，真实输出的会话许可涵盖所有步骤。`flexhmi_control_pause` 停止后续动作。多个输出逐项写入，失败时已发出的动作不会回滚。
+步骤流程通过 `flexhmi_preview` 中的 `machine.upsert {machine}` / `machine.delete {id}` 操作，再经 `flexhmi_apply` 保存；工具数量为 24。完整模型见 [控制文档](../../docs/simplehmi/ai/CONTROL.md)。`flexhmi_control_status.machines` 返回当前步骤、跳转次数和已验证写入次数。保存不启动；`flexhmi_control_arm` 要求初始输出一致、全部引用新鲜、允许条件和依据有效，真实输出的会话许可涵盖所有步骤。`flexhmi_control_pause` 停止后续动作。多个输出逐项写入，失败时已发出的动作不会回滚。
 
 官方 MCP 客户端验收包含：生成待机 → 供水 → 停机配置、预览不改变工程、应用保持手动、显式启动、两次模拟输出回读、终点与人工接管。它验证真实 MCP/FUXA 协议链路，不代表真实语言模型生成质量。
 
 
-`flexhmi_plans` 可读取普通编辑保存记录（source=editor）、AI/Agent 计划（agent）和直接打开工程（load）；这些是操作通道，尚非已认证身份。参数 `projectId`、`source`、`limit`、`cursor` 支持筛选和历史翻页，使用上一页最后一条 ID 作为下一页 cursor，返回少于 limit 项即结束。响应仍为 `data` 数组，工具数量保持 23。编辑记录读取与恢复仍使用 `flexhmi_plan` 和 `project.revert`。
+`flexhmi_plans` 可读取普通编辑保存记录（source=editor）、AI/Agent 计划（agent）和直接打开工程（load）；这些是操作通道，尚非已认证身份。参数 `projectId`、`source`、`limit`、`cursor` 支持筛选和历史翻页，使用上一页最后一条 ID 作为下一页 cursor，返回少于 limit 项即结束。响应仍为 `data` 数组，工具数量为 24。编辑记录读取与恢复仍使用 `flexhmi_plan` 和 `project.revert`。
+
+## 评估记录
+
+`flexhmi_assessments` 检索内置 AI 和外部 Agent 保存的评估，包含无工程改动的报告。支持 `projectId`、`source`（model / external）、`q`、`limit`（1–100）、`cursor`；响应为 `records`、`nextCursor`、`unreadable`。使用返回的 nextCursor 翻页，为 null 时结束；再用 `flexhmi_assessment` 打开详情。有计划的评估应读取其最新 plan 状态再考虑应用，历史观测不是当前值。

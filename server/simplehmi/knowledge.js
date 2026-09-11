@@ -69,11 +69,12 @@ const assessmentPrompt=`你正在执行行业知识辅助评估。返回 JSON {s
 module.exports={validateKnowledge,validateKnowledgeRevision,citationProblems,searchKnowledge,evaluationContext,verifyAssessment,assertAssessmentFresh,prepareAssessmentOperations,assessmentPrompt};
 
 function mountAssessments(router,{dir,getProject,getValues,digest,previewPlan,audit}){
+ const evaluations=require('./assessment-store').createAssessmentStore(dir);
  const fs=require('node:fs'),path=require('node:path');const folder=path.join(dir,'assessments');fs.mkdirSync(folder,{recursive:true,mode:0o700});
  const file=id=>{if(!idOk(id))throw Error('评估记录 ID 无效');return path.join(folder,id+'.json')};
  const write=value=>{const f=file(value.id);fs.writeFileSync(f+'.tmp',JSON.stringify(value),{mode:0o600});fs.renameSync(f+'.tmp',f)};
  const conflict=()=>{const e=Error('工程已变化，请重新取得评估上下文');e.status=409;throw e};
- const endpoint=fn=>async(req,res)=>{try{res.json(await fn(req.body||{},req.params))}catch(e){res.status(e.status||400).json({error:e.message})}};
+ const endpoint=fn=>async(req,res)=>{try{res.json(await fn(req.body||{},req.params,req.query))}catch(e){res.status(e.status||400).json({error:e.message})}};
  router.post('/industry/context',endpoint(async request=>{
   const p=getProject(),revision=digest(p);if(request.expectedRevision!==revision)conflict();
   if(typeof request.prompt!=='string'||!request.prompt.trim()||request.prompt.length>12000)throw Error('请提供评估需求');
@@ -89,10 +90,11 @@ function mountAssessments(router,{dir,getProject,getValues,digest,previewPlan,au
   if(typeof request.summary!=='string'||!request.summary.trim()||request.summary.length>500||!Array.isArray(request.operations)||request.operations.length>500)throw Error('评估需要说明与操作数组');
   const assessment=verifyAssessment(request,context.context);assertAssessmentFresh(assessment,getProject(),getValues());
   const operations=prepareAssessmentOperations(request.operations,assessment);
-  const record={id:'evaluation_'+crypto.randomUUID().replaceAll('-',''),createdAt:Date.now(),contextId:context.id,assessment,summary:request.summary,status:'report'};
-  if(operations.length){record.plan=await previewPlan({expectedRevision:context.expectedRevision,summary:request.summary,operations,actor:'external-assessor'},undefined,assessment);record.status='preview';}
-  write(record);audit({event:'assessment-verified',evaluationId:record.id,planId:record.plan?.id});return record;
+  const plan=operations.length?await previewPlan({expectedRevision:context.expectedRevision,summary:request.summary,operations,actor:'external-assessor'},undefined,assessment):undefined;
+  const record=evaluations.save({project:getProject(),expectedRevision:context.expectedRevision,source:'external',contextId:context.id,assessment,summary:request.summary,plan});
+  audit({event:'assessment-verified',evaluationId:record.id,planId:record.plan?.id});return record;
  }));
- router.get('/industry/evaluations/:id',endpoint(async(_,params)=>{if(!params.id.startsWith('evaluation_'))throw Error('评估记录 ID 无效');return JSON.parse(fs.readFileSync(file(params.id),'utf8'))}));
+ router.get('/industry/evaluations',endpoint(async(_,params,query)=>evaluations.list(query)));
+ router.get('/industry/evaluations/:id',endpoint(async(_,params)=>evaluations.read(params.id)));
 }
 module.exports.mountAssessments=mountAssessments;

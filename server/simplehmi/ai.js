@@ -53,6 +53,7 @@ async function completion(config, key, messages, signal) {
 }
 
 function createAi({dir, getProject, getValues=()=>({}), digest, previewPlan, validatePlan, audit, complete = completion, timeoutMs = 120000}) {
+  const evaluations=require('./assessment-store').createAssessmentStore(dir);
   const folder = path.join(dir, 'ai'); fs.mkdirSync(folder, {recursive: true, mode: 0o700});
   const configFile = path.join(folder, 'config.json');
   let config = null, key = '';
@@ -70,7 +71,7 @@ function createAi({dir, getProject, getValues=()=>({}), digest, previewPlan, val
     audit({event: 'ai-configured', provider: config.provider});
     return status();
   }
-  const view = job => ({id: job.id, status: job.status, stage: job.stage, attempt: job.attempt, createdAt: job.createdAt, ...(job.plan ? {plan: job.plan} : {}), ...(job.report ? {report: job.report} : {}), ...(job.error ? {error: job.error} : {})});
+  const view = job => ({id: job.id, status: job.status, stage: job.stage, attempt: job.attempt, createdAt: job.createdAt, ...(job.plan ? {plan: job.plan} : {}), ...(job.report ? {report: job.report} : {}), ...(job.evaluationId ? {evaluationId:job.evaluationId} : {}), ...(job.error ? {error: job.error} : {})});
   function get(id) { const job = jobs.get(id); if (!job) throw Error('找不到生成任务；重启后请重新生成'); return view(job); }
   function cancel(id) {
     const job = jobs.get(id); if (!job) throw Error('找不到生成任务');
@@ -108,13 +109,14 @@ function createAi({dir, getProject, getValues=()=>({}), digest, previewPlan, val
             const request = parsePlan(output,isAssessment);
             const assessment=isAssessment?verifyAssessment(request,evidence):null;
             if(assessment)request.operations=prepareAssessmentOperations(request.operations,assessment);
-            if(isAssessment&&!request.operations.length){if(digest(snapshot)!==digest(getProject())){const e=Error('工程已变化，请重新评估');e.status=409;throw e;}assertAssessmentFresh(assessment,getProject(),getValues());job.report=assessment;job.status='ready';job.stage='评估完成，未提出工程修改';audit({event:'ai-assessed',jobId:job.id});return;}
+            if(isAssessment&&!request.operations.length){if(digest(snapshot)!==digest(getProject())){const e=Error('工程已变化，请重新评估');e.status=409;throw e;}assertAssessmentFresh(assessment,getProject(),getValues());job.evaluationId=evaluations.save({project:snapshot,expectedRevision:input.expectedRevision,source:'model',summary:request.summary,assessment}).id;job.report=assessment;job.status='ready';job.stage='评估报告已保存，未提出工程修改';audit({event:'ai-assessed',jobId:job.id,evaluationId:job.evaluationId});return;}
             const candidate = await validatePlan(snapshot, request);
             if (candidate.blocked) throw Error(candidate.diagnostics.map(x => x.message).join('；'));
             if (job.controller.signal.aborted) throw Error('生成已停止');
             // This checks the original revision again and only stores a preview.
             job.plan = await previewPlan({...request, expectedRevision: input.expectedRevision, actor: 'model'}, job.controller.signal,assessment);
             if (job.controller.signal.aborted) { job.plan = null; throw Error('生成已停止'); }
+            if(assessment)job.evaluationId=evaluations.save({project:snapshot,expectedRevision:input.expectedRevision,source:'model',summary:request.summary,assessment,plan:job.plan}).id;
             job.status = 'ready'; job.stage = '计划已检查，请预览关联影响'; audit({event: 'ai-ready', jobId: job.id, planId: job.plan.id}); return;
           } catch (e) {
             if (e.status === 409 || job.controller.signal.aborted || attempt === 2) throw e;

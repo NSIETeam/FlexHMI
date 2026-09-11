@@ -13,6 +13,7 @@ async function main(){const [command,arg]=process.argv.slice(2);let data;
   case 'control':data=await api('control/status');break;
   case 'pause':data=await api('control/pause',{});break;
   case 'assessment':if(!arg)throw Error('需要评估 ID');data=await api('industry/evaluations/'+encodeURIComponent(arg));break;
+  case 'assessments':data=await api('industry/evaluations?q='+encodeURIComponent(arg||''));break;
   case 'context':case 'assess':case 'arm':{if(!arg)throw Error('需要请求 JSON 文件');const request=JSON.parse(fs.readFileSync(arg,'utf8'));const route={context:'industry/context',assess:'industry/evaluations',arm:'control/arm'}[command];data=await api(route,request);break;}
   case 'inspect':data=await api('agent/state');break;
   case 'capabilities':data=await api('agent/capabilities');break;
@@ -21,7 +22,7 @@ async function main(){const [command,arg]=process.argv.slice(2);let data;
   case 'history':if(!arg)throw Error('需要变量 ID');data=await api('history/'+encodeURIComponent(arg));break;
   case 'preview':{if(!arg)throw Error('需要计划 JSON 文件路径');const plan=JSON.parse(fs.readFileSync(arg,'utf8'));if(!plan.expectedRevision)throw Error('计划必须包含 inspect 返回的 expectedRevision；禁止自动替换以掩盖并发冲突');data=await api('agent/plans',plan);break;}
   case 'apply':case 'cancel':if(!arg)throw Error('需要计划 ID');data=await api(`agent/plans/${encodeURIComponent(arg)}/${command}`,{});break;
-  default:throw Error('用法：node scripts/agent-cli.cjs inspect|capabilities|schema|values|history <tagId>|audit|preview <plan.json>|apply <planId>|cancel <planId>|knowledge [query]|context <request.json>|assess <request.json>|assessment <id>|control|arm <request.json>|pause');
+  default:throw Error('用法：node scripts/agent-cli.cjs inspect|capabilities|schema|values|history <tagId>|audit|preview <plan.json>|apply <planId>|cancel <planId>|knowledge [query]|context <request.json>|assess <request.json>|assessment <id>|assessments [query]|control|arm <request.json>|pause');
  }
  process.stdout.write(JSON.stringify(data,null,2)+'\n');
 }
