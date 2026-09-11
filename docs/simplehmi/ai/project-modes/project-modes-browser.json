@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "browser": "headless Chrome",
+  "isolatedData": true,
+  "threeTypesCreatedFromUi": true,
+  "typesPersistAcrossServerRestart": true,
+  "visibleCurrentType": true,
+  "modelGenerationDefaultsToCurrentType": true,
+  "cancelDoesNotPauseControl": true,
+  "previewDoesNotApply": true,
+  "changedChoiceInvalidatesPreview": true,
+  "conversionPausesControl": true,
+  "conversionDoesNotWriteStop": true,
+  "visualizationCannotArm": true,
+  "layoutsBindingsRulesStepsKnowledgePreserved": true,
+  "revisionConflictRejected": true,
+  "freshPreviewAfterConflict": true,
+  "narrowDialogActionsVisible": true,
+  "legacyTypeNotSilentlyRewritten": true,
+  "alreadyConvertedDoesNotPauseControl": true
+}

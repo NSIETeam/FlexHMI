@@ -1,3 +1,4 @@
+import {projectMode, projectModes, modeChoices, styleModeDialog, openProjectMode} from './project-mode.mjs';
 import {showOwnerLogin} from './access-panel.mjs';
 import {openConnectionEditor} from './connection-editor.mjs';
 import {openKnowledgePanel} from './knowledge-panel.mjs';
@@ -272,11 +273,12 @@ function render() {
     return;
   }
   $("#app").innerHTML =
-    `<header class="topbar"><div class="brand"><span class="brand-mark">${icon("logo")}</span><span class="brand-wordmark">Flex<b>HMI</b></span></div><nav class="nav" aria-label="主导航"><button id="nav-project">项目</button><button id="nav-devices">设备</button><button id="nav-screen" class="active">画面</button></nav><div class="top-name">${esc(state.project.name)}</div><span id="save-state" class="save-status"></span><button class="primary top-run" id="run">${icon("play")}运行</button></header>
+    `<header class="topbar"><div class="brand"><span class="brand-mark">${icon("logo")}</span><span class="brand-wordmark">Flex<b>HMI</b></span></div><nav class="nav" aria-label="主导航"><button id="nav-project">项目</button><button id="nav-devices">设备</button><button id="nav-screen" class="active">画面</button></nav><div class="top-name"><span class="project-title">${esc(state.project.name)}</span><button id="project-mode" class="project-mode-badge" aria-label="系统类型：${projectMode(state.project).name}">${projectMode(state.project).name}${icon("chevron")}</button></div><span id="save-state" class="save-status"></span><button class="primary top-run" id="run">${icon("play")}运行</button></header>
  <div class="subbar"><div class="breadcrumb">${icon("folder")}<span>${esc(state.project.name)}</span>${icon("chevron")}<strong>${esc(page().name)}</strong></div><button id="undo" title="撤销 ⌘Z" aria-label="撤销" ${!state.undo.length ? "disabled" : ""}>${icon("undo")}</button><button id="redo" title="重做 ⌘⇧Z" aria-label="重做" ${!state.redo.length ? "disabled" : ""}>${icon("redo")}</button><span class="divider"></span><button id="duplicate" title="复制组件 ⌘D" aria-label="复制组件">${icon("copy")}</button><button id="remove" title="删除组件" aria-label="删除组件">${icon("trash")}</button><span class="divider"></span><button id="arrange-tools" title="对齐与分布">${icon("grid")}<span>对齐</span></button><button id="snap-toggle" aria-pressed="${state.snap}" title="拖动时吸附网格和参考线">${icon("link")}<span>吸附</span></button><button id="connection-tools" title="连接设备并编辑流向">${icon("link")}连接</button><button id="control-panel" title="控制规则与人工接管">${icon("switch")}控制</button><button id="ai-studio">${icon("screen")}<span>AI 工作台</span></button><button id="engineer" aria-label="工程师模式" title="工程师模式">${icon("settings")}<span style="font-size:12px">工程师模式</span></button></div>
  <main class="workspace"><aside class="left-panel"><div class="panel-tabs"><button data-tab="components" class="${state.tab === "components" ? "active" : ""}">组件</button><button data-tab="devices" class="${state.tab === "devices" ? "active" : ""}">设备变量</button><button data-tab="layers" class="${state.tab === "layers" ? "active" : ""}">图层</button></div><div id="left-content"></div></aside><section class="center"><div class="stage-area" id="stage"><div class="canvas-wrap" id="canvas-wrap"><div class="canvas" id="canvas" aria-label="HMI 画布"></div></div></div><div class="page-bar" id="pages"></div></section><aside class="right-panel" id="properties"></aside></main>
  <footer class="footer"><span class="dot" id="connection-dot"></span><span id="connection-text">正在连接 Runtime</span><span class="spacer"></span><span id="object-count"></span><span style="margin:0 10px;color:#d7dfeb">|</span><span>${page().width} × ${page().height}</span><button id="zoom-minus" aria-label="缩小">−</button><button id="zoom-fit" style="min-width:47px">适应</button><button id="zoom-plus" aria-label="放大">＋</button></footer>`;
   $("#nav-project").onclick = projectDialog;
+  $("#project-mode").onclick = projectModeDialog;
   $("#nav-devices").onclick = devicesDialog;
   $("#nav-screen").onclick = () => {
     selectOnly(null);
@@ -1095,6 +1097,7 @@ async function setRuntime(on) {
   render();
 }
 function connectionDialog(edgeId){return openConnectionEditor({page:page(),tags:tags(),selectedIds:state.selection,edgeId,uid,dialog,toast,apply:p=>{snapshot();page().connections=p.connections;changed();render();}})}
+function projectModeDialog(){return openProjectMode({api,dialog,save,toast,accept:async p=>{snapshot();state.project=p;state.saved=true;render();}})}
 function knowledgeDialog(){return openKnowledgePanel({api,dialog,save,toast,accept:async p=>{snapshot();state.project=p;state.saved=true;render();}})}
 function controlDialog(){return openControlPanel({api,dialog,save,toast,accept:async p=>{snapshot();state.project=p;state.saved=true;render();}})}
 function renderRuntime() {
@@ -1120,7 +1123,7 @@ function renderRuntime() {
 async function projectDialog() {
   const d = dialog(
     "项目",
-    `<div class="field-row"><button class="primary" id="new-project">${icon("plus")}新建工程</button><button class="secondary" id="import-project">${icon("upload")}导入工程</button></div><div class="field-row" style="margin-top:10px"><button class="secondary" id="export-project">${icon("download")}导出当前工程</button><button class="secondary" id="open-demo">${icon("screen")}打开演示工程</button></div><button class="secondary full" id="open-waste" style="margin-top:10px">垃圾焚烧发电 · 流程演示</button><div class="section-label" style="margin-top:25px">本地工程</div><div id="project-list">正在加载…</div>`,
+    `<div class="project-current-mode"><div><strong>${esc(state.project.name)}</strong><span>系统类型：${projectMode(state.project).name}</span></div><button id="project-mode-settings">更改类型</button></div><div class="field-row"><button class="primary" id="new-project">${icon("plus")}新建工程</button><button class="secondary" id="import-project">${icon("upload")}导入工程</button></div><div class="field-row" style="margin-top:10px"><button class="secondary" id="export-project">${icon("download")}导出当前工程</button><button class="secondary" id="open-demo">${icon("screen")}打开演示工程</button></div><button class="secondary full" id="open-waste" style="margin-top:10px">垃圾焚烧发电 · 流程演示</button><div class="section-label" style="margin-top:25px">本地工程</div><div id="project-list">正在加载…</div>`,
   );
   $("#open-waste").onclick = async () => {
     try {
@@ -1135,6 +1138,7 @@ async function projectDialog() {
     }
   };
   $("#new-project").onclick = () => newProjectDialog();
+  $("#project-mode-settings").onclick = projectModeDialog;
   $("#import-project").onclick = () => $("#import-file").click();
   $("#export-project").onclick = () => {
     const blob = new Blob([JSON.stringify(state.project, null, 2)], {
@@ -1202,8 +1206,7 @@ function resetProjectState() {
   state.revision++;
 }
 async function useProject(p) {
-  await api("/project", p);
-  state.project = p;
+  state.project = await api("/project", p);
   resetProjectState();
   render();
   await poll();
@@ -1211,12 +1214,14 @@ async function useProject(p) {
 function newProjectDialog() {
   const d = dialog(
     "新建工程",
-    `<p>从一张空白画面开始，添加设备和变量。</p><form id="new-form">${field("工程名称", "new-name", "未命名工程", "text", 'required maxlength="100"')}<div class="dialog-actions"><button type="submit" class="primary">创建工程</button></div></form>`,
+    `<p>选择系统类型，从一张空白画面开始。创建后可手动搭建，或在 AI 工作台描述需求生成工程。</p><form id="new-form">${field("工程名称", "new-name", "未命名工程", "text", 'required maxlength="100"')}${modeChoices()}</form><p id="new-mode-next" class="hint">${projectModes[0].next}</p><div class="dialog-actions"><button type="submit" form="new-form" class="primary">创建工程</button></div>`,
   );
+  styleModeDialog(d);
+  $("#new-form").onchange = () => {$("#new-mode-next").textContent=projectModes.find(m=>m.id===$("#new-form input[name=project-mode]:checked").value).next;};
   $("#new-name").select();
   $("#new-form").onsubmit = async (e) => {
     e.preventDefault();
-    const name = $("#new-name").value.trim();
+    const name = $("#new-name").value.trim(), mode = $("#new-form input[name=project-mode]:checked").value;
     if (!name) return;
     const button = e.submitter;
     button.disabled = true;
@@ -1226,6 +1231,7 @@ function newProjectDialog() {
         schemaVersion: 1,
         id: uid(),
         name,
+        system: {mode},
         devices: [],
         activePageId: uid(),
         pages: [],
@@ -1242,7 +1248,7 @@ function newProjectDialog() {
       ];
       await useProject(p);
       d.close();
-      toast("工程已创建，先添加一台设备");
+      toast(projectMode(state.project).name+"工程已创建，可添加设备或使用 AI 生成");
     } catch (err) {
       toast(err.message);
       button.disabled = false;

@@ -21,3 +21,20 @@ test('process optimization preserves unconnected titles, controls and cards whil
  assert.deepEqual(result.diagnostics,[]);assert.ok(result.page.connections.every(e=>e.points.length===2));
  const second=optimizePage(result.page);assert.deepEqual(second.page,result.page,'optimizing an already optimized process is stable');
 });
+
+test('type conversion preserves the complete engineering configuration and reports executable consequences',async()=>{
+ const {waterDemo}=await import('../simplehmi/water-demo.mjs');
+ const choices=['visualization','intelligent-control','industry-ai'];
+ const seeded=waterDemo('industry-ai','mode_change');
+ for(const from of choices)for(const to of choices.filter(x=>x!==from)){
+  const normalized=await applyOperations(seeded,{operations:[{op:'project.configure',mode:from}]},validate),before=normalized.project;
+  const result=await applyOperations(before,{operations:[{op:'project.configure',mode:to}]},validate);
+  assert.equal(result.project.system.mode,to);
+  for(const key of ['id','name','devices','pages','control','knowledge','simulation','activePageId'])assert.deepEqual(result.project[key],before[key],`${from} -> ${to}: ${key}`);
+  const impact=result.impacts.find(x=>x.code==='system-mode-changed');assert.deepEqual([impact.from,impact.to],[from,to]);
+  assert.ok(result.impacts.some(x=>x.code==='control-paused'));
+  assert.equal(result.impacts.some(x=>x.code==='automatic-control-unavailable'),to==='visualization');
+  assert.ok(!result.impacts.some(x=>x.code==='runtime-restart'));
+  assert.equal(result.blocked,false);
+ }
+});

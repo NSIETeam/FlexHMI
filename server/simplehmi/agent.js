@@ -82,6 +82,11 @@ async function applyOperations(before,request,validate,store,history){
  const {optimizePage,routePage}=await import('../../simplehmi/topology.mjs');
  p.pages=p.pages.map(pg=>{const result=optimize.has(pg.id)?optimizePage(pg):routePage(pg);diagnostics.push(...result.diagnostics.map(d=>({...d,pageId:pg.id})));return result.page});
  p=validate(p);
+ if(p.id===before.id&&(p.system?.mode||'visualization')!==(before.system?.mode||'visualization')){
+  const from=before.system?.mode||'visualization',to=p.system.mode,names={visualization:'数据可视化','intelligent-control':'智能控制','industry-ai':'行业 AI 系统'};
+  impacts.push({code:'system-mode-changed',from,to,message:`系统类型从“${names[from]}”切换为“${names[to]}”。本次切换不发送设备停机指令`});
+  if(to==='visualization')impacts.push({code:'automatic-control-unavailable',message:'数据可视化类型下不能启动自动控制；已保存的规则和步骤流程可在切回控制类型后检查并启用'});
+ }
  if(JSON.stringify([p.id,p.devices,p.simulation])!==JSON.stringify([before.id,before.devices,before.simulation]))impacts.push({code:'runtime-restart',message:'设备配置变化将重启 FUXA 通信；当前历史缓存和模拟手动值会重置'});
  if(p.devices.some(d=>d.protocol==='sim')&&!['water-transfer','waste-to-energy'].includes(p.simulation))impacts.push({code:'independent-simulation-signals',message:'当前模拟变量是独立信号，未建立物料守恒或设备联动关系，不能用来验证工艺行为'});
  if(p.id!==before.id)impacts.push({code:'project-switch',message:'当前运行工程将切换；原工程文件保留'});

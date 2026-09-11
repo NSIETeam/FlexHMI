@@ -137,3 +137,22 @@ dialog::backdrop{background:#2a2a2a4d;backdrop-filter:blur(5px)}
 .assessment-history-list{display:grid;gap:8px;max-height:360px;overflow:auto}.assessment-history-list .agent-history-row{grid-template-columns:minmax(0,1fr)}.assessment-history-list button[data-evaluation-id]{display:grid;gap:5px;text-align:left;justify-content:stretch;justify-items:start;padding:10px 12px;min-width:0}.assessment-history-list span,.assessment-history-list small{width:100%;overflow-wrap:anywhere}.assessment-history-list small{line-height:1.5;color:#666}#assessment-search button{align-self:end}#assessment-more{margin-top:12px}
 
 .agent-dialog [hidden]{display:none!important}#agent-assessments-panel,#agent-result{scroll-margin-top:14px}
+
+/* Project type is visible without adding another primary navigation entry. */
+.top-name{min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden}
+.project-title{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.top-name .project-mode-badge{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:2px 7px;border:0;background:transparent;color:#4c5257;font-size:13px;line-height:1.3;font-weight:500;box-shadow:none;white-space:nowrap}
+.project-mode-badge .icon{width:12px;height:12px}.top-name .project-mode-badge:hover{background:#eceeef;color:#171b1e}
+.project-current-mode{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #e5e7e9}
+.project-current-mode>div{display:grid;gap:6px;min-width:0}.project-current-mode strong{overflow-wrap:anywhere}.project-current-mode span{font-size:14px;color:#61696f}.project-current-mode>button{flex:none}
+.project-mode-dialog{width:min(680px,calc(100vw - 32px))}.project-mode-dialog[open]{display:flex;flex-direction:column;max-height:90dvh;overflow:hidden}
+.project-mode-dialog .dialog-head{flex:none}.project-mode-dialog .dialog-body{min-height:0;overflow:auto;max-height:none;font-size:14px;line-height:1.65}
+.project-mode-dialog>.dialog-actions{flex:none;margin:0;padding:16px 26px;border-top:1px solid #e5e7e9;background:#fff}
+.project-mode-dialog .dialog-body>p:first-child{margin-top:0;overflow-wrap:anywhere}.project-mode-dialog .hint{font-size:14px}
+.project-mode-choices{display:grid;gap:10px;border:0;padding:0;margin:18px 0}.project-mode-choices legend{margin-bottom:10px;padding:0;font-weight:600;font-size:14px}
+.project-mode-choice{display:flex;align-items:flex-start;gap:12px;text-align:left;padding:16px;border:1px solid #dfe3e6;border-radius:10px;background:#fff;cursor:pointer}
+.project-mode-choice:has(input:checked){border-color:#343b41;background:#f5f6f7;box-shadow:inset 0 0 0 1px #343b41}
+.project-mode-choice:has(input:focus-visible){outline:2px solid #596169;outline-offset:3px}.project-mode-choice>input{width:16px;height:16px;flex:none;margin:4px 0 0;padding:0;box-shadow:none;outline:none;accent-color:#252b30}
+.project-mode-choice>span{display:grid;gap:4px;min-width:0}.project-mode-choice strong{font-size:16px;color:#252b30}.project-mode-choice span>span{font-size:14px;color:#606970;font-weight:400}
+#mode-result:empty{display:none}#mode-result{border-top:1px solid #e3e6e8;margin-top:18px;padding-top:8px;font-size:14px;overflow-wrap:anywhere}#mode-result h3{font-size:16px}#mode-result li{margin:8px 0}
+@media(max-width:640px){.project-mode-dialog .dialog-body{padding:18px}.project-mode-dialog>.dialog-actions{padding:14px 18px}.project-mode-choice{padding:12px}.project-mode-dialog .dialog-head{padding:16px 18px}}
