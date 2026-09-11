@@ -85,8 +85,21 @@ try {
  Execute-Checked $Installer "/S /D=$install" 180
  if(Test-Path (Join-Path $legacy '编辑工程.lnk')){throw 'Old owned shortcut not removed'}
  if(!(Test-Path (Join-Path $legacy '用户说明.txt'))){throw 'Upgrade removed unrelated menu file'}
+ # NSIS launches a temporary uninstaller; parent exit is not completion.
+ # Observe all installed files, product shortcuts and both product registrations.
+ $ownedFiles=@(Get-ChildItem $install -Recurse -File | Select-Object -ExpandProperty FullName)
+ $ownedLinks=@((Join-Path ([Environment]::GetFolderPath('Desktop')) 'FlexHMI.lnk'))
+ foreach($group in @('FlexHMI 桌面版','FlexHMI 工控机版')){foreach($link in @('编辑工程','运行画面','全屏运行','停止服务','卸载')){$ownedLinks+=Join-Path $programs "$group/$link.lnk"}}
+ $registrations=@('HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/FlexHMI-IPC','HKCU:/Software/FlexHMI-IPC')
  Execute-Checked (Join-Path $install 'Uninstall.exe') '/S' 120
- for($i=0;$i -lt 40 -and (Test-Path $exe);$i++){Start-Sleep -Milliseconds 500}
+ $deadline=[DateTime]::UtcNow.AddSeconds(120)
+ do {
+  $remaining=@($ownedFiles+$ownedLinks+$registrations | Where-Object {Test-Path -LiteralPath $_})
+  if($remaining.Count -eq 0){break}
+  Start-Sleep -Milliseconds 500
+ } while([DateTime]::UtcNow -lt $deadline)
+ @{remaining=$remaining;ownedFileCount=$ownedFiles.Count;shortcutCount=$ownedLinks.Count;completionObserved=($remaining.Count -eq 0)} | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $Artifacts 'uninstall-completion.json') -Encoding UTF8
+ if($remaining.Count -ne 0){throw "Uninstall did not finish; remaining items: $($remaining.Count)"}
  if(Test-Path $exe){throw 'Uninstall left the native launcher installed'}
  if(!(Test-Path $projectFile) -or (Get-FileHash $projectFile -Algorithm SHA256).Hash -ne $projectHash){throw 'Uninstall removed or changed the saved project'}
  if(!(Test-Path $policyFile) -or (Get-FileHash $policyFile -Algorithm SHA256).Hash -ne $policyHash){throw 'Upgrade or uninstall changed access policy'}
