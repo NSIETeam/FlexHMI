@@ -46,3 +46,16 @@ test('declared return decisions are reversible and inferred layoutRole cannot ov
  const r=graphColumns(nodes,edges);assert.deepEqual(r.columns.map(([,items])=>items.map(c=>c.id)),[['b'],['c'],['a']]);assert.deepEqual(r.feedback,['ab']);assert.deepEqual(r.cycles,[]);
  const again=graphColumns(nodes,edges.map(e=>({...e,routeMode:'auto',layoutRole:'return'})));assert.deepEqual(again.columns.map(([,items])=>items.map(c=>c.id)),[['a'],['b'],['c']]);assert.deepEqual(again.feedback,['ca']);assert.equal(again.cycles.length,1);
 });
+
+test('complex independent channels separate without moving equipment, changing ports or adding bends',async()=>{
+ const {optimizePage,routePage}=await import('../simplehmi/topology.mjs');
+ const fixture=require('./fixtures/complex-process.json'),r=optimizePage(structuredClone(fixture));
+ assert.equal(r.diagnostics.filter(d=>d.code==='route-overlap').length,0);assert.ok(r.diagnostics.some(d=>d.code==='channel-adjusted'));assert.ok(r.diagnostics.some(d=>d.code==='route-crossing'));
+ const bends=[2,2,2,2,0,0,4,2,0,2,2];for(let i=0;i<bends.length;i++)assert.equal(r.page.connections.find(e=>e.id==='edge_'+i).routeInfo.bends,bends[i]);
+ const again=routePage(r.page);assert.deepEqual(again.page,r.page);assert.deepEqual(again.page.components,r.page.components);
+ const moved=r.page.connections.filter(e=>e.routeInfo.channelAdjusted);assert.ok(moved.length>=2);for(const e of moved){assert.deepEqual([e.from,e.to],fixture.connections.find(x=>x.id===e.id)&&[fixture.connections.find(x=>x.id===e.id).from,fixture.connections.find(x=>x.id===e.id).to]);assert.ok(e.points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)));}
+});
+test('unavoidable duplicate straight connections remain diagnosed instead of inventing a fake detour',async()=>{
+ const {routePage}=await import('../simplehmi/topology.mjs'),p=page([node('a',100,100),node('b',500,100)],[{id:'one',from:'a',to:'b',fromPort:'right',toPort:'left'},{id:'two',from:'a',to:'b',fromPort:'right',toPort:'left'}]),r=routePage(p);
+ assert.ok(r.diagnostics.some(d=>d.code==='route-overlap'));assert.ok(!r.diagnostics.some(d=>d.code==='channel-adjusted'));assert.ok(r.page.connections.every(e=>e.points.length===2));assert.deepEqual(r.page.components,p.components);
+});

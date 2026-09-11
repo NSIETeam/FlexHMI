@@ -1,0 +1,521 @@
+{
+  "fixture": "11 nodes and 11 connections, local Node, not a global performance guarantee",
+  "runs": 100,
+  "medianMs": 0.31741700000000606,
+  "p95Ms": 1.1920000000000002,
+  "maxMs": 1.8493330000000014,
+  "diagnostics": [
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_0",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变"
+    },
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_10",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变"
+    },
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_6",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变"
+    },
+    {
+      "code": "route-crossing",
+      "connections": [
+        "edge_6",
+        "edge_10"
+      ],
+      "point": {
+        "x": 372,
+        "y": 240
+      },
+      "message": "管线 edge_6 与 烟气回流 交叉但不连通；留白跨线只表示越过"
+    },
+    {
+      "code": "route-crossing",
+      "connections": [
+        "edge_7",
+        "edge_10"
+      ],
+      "point": {
+        "x": 372,
+        "y": 220
+      },
+      "message": "管线 edge_7 与 烟气回流 交叉但不连通；留白跨线只表示越过"
+    }
+  ],
+  "project": {
+    "id": "complex_process",
+    "name": "多分支布线验收",
+    "width": 1800,
+    "height": 1000,
+    "components": [
+      {
+        "id": "waste",
+        "kind": "equipment",
+        "label": "垃圾进料",
+        "x": 80,
+        "y": 528,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "furnace",
+        "kind": "equipment",
+        "label": "焚烧炉",
+        "x": 312,
+        "y": 344,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "boiler",
+        "kind": "equipment",
+        "label": "余热锅炉",
+        "x": 544,
+        "y": 436,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "reactor",
+        "kind": "equipment",
+        "label": "反应塔",
+        "x": 776,
+        "y": 252,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "filter",
+        "kind": "equipment",
+        "label": "布袋除尘",
+        "x": 1008,
+        "y": 344,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "fan",
+        "kind": "equipment",
+        "label": "引风机",
+        "x": 1240,
+        "y": 344,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "stack",
+        "kind": "equipment",
+        "label": "烟囱",
+        "x": 1472,
+        "y": 344,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "lime",
+        "kind": "equipment",
+        "label": "石灰浆",
+        "x": 80,
+        "y": 344,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "carbon",
+        "kind": "equipment",
+        "label": "活性炭",
+        "x": 80,
+        "y": 160,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "turbine",
+        "kind": "equipment",
+        "label": "汽轮机",
+        "x": 776,
+        "y": 436,
+        "w": 120,
+        "h": 120
+      },
+      {
+        "id": "ash",
+        "kind": "equipment",
+        "label": "灰渣收集",
+        "x": 544,
+        "y": 252,
+        "w": 120,
+        "h": 120
+      }
+    ],
+    "connections": [
+      {
+        "id": "edge_0",
+        "from": "waste",
+        "to": "furnace",
+        "points": [
+          {
+            "x": 200,
+            "y": 588
+          },
+          {
+            "x": 288,
+            "y": 588
+          },
+          {
+            "x": 288,
+            "y": 404
+          },
+          {
+            "x": 312,
+            "y": 404
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "为区分独立管线调整中间通道，端点和流向保持不变",
+          "channelAdjusted": true
+        }
+      },
+      {
+        "id": "edge_1",
+        "from": "furnace",
+        "to": "boiler",
+        "points": [
+          {
+            "x": 432,
+            "y": 404
+          },
+          {
+            "x": 488,
+            "y": 404
+          },
+          {
+            "x": 488,
+            "y": 496
+          },
+          {
+            "x": 544,
+            "y": 496
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "端口不同轴，使用居中的正交通道"
+        }
+      },
+      {
+        "id": "edge_2",
+        "from": "boiler",
+        "to": "reactor",
+        "points": [
+          {
+            "x": 664,
+            "y": 496
+          },
+          {
+            "x": 720,
+            "y": 496
+          },
+          {
+            "x": 720,
+            "y": 312
+          },
+          {
+            "x": 776,
+            "y": 312
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "端口不同轴，使用居中的正交通道"
+        }
+      },
+      {
+        "id": "edge_3",
+        "from": "reactor",
+        "to": "filter",
+        "points": [
+          {
+            "x": 896,
+            "y": 312
+          },
+          {
+            "x": 952,
+            "y": 312
+          },
+          {
+            "x": 952,
+            "y": 404
+          },
+          {
+            "x": 1008,
+            "y": 404
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "端口不同轴，使用居中的正交通道"
+        }
+      },
+      {
+        "id": "edge_4",
+        "from": "filter",
+        "to": "fan",
+        "points": [
+          {
+            "x": 1128,
+            "y": 404
+          },
+          {
+            "x": 1240,
+            "y": 404
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 0,
+          "arrowDirection": "right",
+          "reason": "端口同轴，直接连接"
+        }
+      },
+      {
+        "id": "edge_5",
+        "from": "fan",
+        "to": "stack",
+        "points": [
+          {
+            "x": 1360,
+            "y": 404
+          },
+          {
+            "x": 1472,
+            "y": 404
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 0,
+          "arrowDirection": "right",
+          "reason": "端口同轴，直接连接"
+        }
+      },
+      {
+        "id": "edge_6",
+        "from": "lime",
+        "to": "reactor",
+        "points": [
+          {
+            "x": 200,
+            "y": 404
+          },
+          {
+            "x": 268,
+            "y": 404
+          },
+          {
+            "x": 268,
+            "y": 240
+          },
+          {
+            "x": 756,
+            "y": 240
+          },
+          {
+            "x": 756,
+            "y": 312
+          },
+          {
+            "x": 776,
+            "y": 312
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 4,
+          "arrowDirection": "right",
+          "reason": "为区分独立管线调整中间通道，端点和流向保持不变",
+          "channelAdjusted": true
+        }
+      },
+      {
+        "id": "edge_7",
+        "from": "carbon",
+        "to": "filter",
+        "points": [
+          {
+            "x": 200,
+            "y": 220
+          },
+          {
+            "x": 988,
+            "y": 220
+          },
+          {
+            "x": 988,
+            "y": 404
+          },
+          {
+            "x": 1008,
+            "y": 404
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "端口不同轴，使用居中的正交通道"
+        }
+      },
+      {
+        "id": "edge_8",
+        "from": "boiler",
+        "to": "turbine",
+        "points": [
+          {
+            "x": 664,
+            "y": 496
+          },
+          {
+            "x": 776,
+            "y": 496
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 0,
+          "arrowDirection": "right",
+          "reason": "端口同轴，直接连接"
+        }
+      },
+      {
+        "id": "edge_9",
+        "from": "furnace",
+        "to": "ash",
+        "points": [
+          {
+            "x": 432,
+            "y": 404
+          },
+          {
+            "x": 488,
+            "y": 404
+          },
+          {
+            "x": 488,
+            "y": 312
+          },
+          {
+            "x": 544,
+            "y": 312
+          }
+        ],
+        "resolvedPorts": {
+          "from": "right",
+          "to": "left"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "right",
+          "reason": "端口不同轴，使用居中的正交通道"
+        }
+      },
+      {
+        "id": "edge_10",
+        "from": "fan",
+        "to": "furnace",
+        "routeMode": "return",
+        "label": "烟气回流",
+        "layoutRole": "return",
+        "points": [
+          {
+            "x": 1300,
+            "y": 344
+          },
+          {
+            "x": 1300,
+            "y": 208
+          },
+          {
+            "x": 372,
+            "y": 208
+          },
+          {
+            "x": 372,
+            "y": 344
+          }
+        ],
+        "resolvedPorts": {
+          "from": "top",
+          "to": "top"
+        },
+        "routeStatus": "ok",
+        "routeError": null,
+        "routeInfo": {
+          "bends": 2,
+          "arrowDirection": "bottom",
+          "reason": "为区分独立管线调整中间通道，端点和流向保持不变",
+          "channelAdjusted": true
+        }
+      }
+    ]
+  }
+}

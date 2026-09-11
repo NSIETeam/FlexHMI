@@ -80,6 +80,55 @@ export function connectionCrossings(edges){
  }
  return diagnostics;
 }
+// Shift interior channels only: fixed equipment ports and first/last directions remain intact.
+// Shared source/destination branches may deliberately share a stem, as in crossing diagnostics.
+function channelPenalty(a,b){
+ if(a.routeStatus!=='ok'||b.routeStatus!=='ok'||((a.from===b.from||a.to===b.to)&&!(a.from===b.from&&a.to===b.to)))return 0;
+ let total=0;
+ for(let i=1;i<a.points.length;i++)for(let j=1;j<b.points.length;j++){
+  const p=a.points[i-1],q=a.points[i],r=b.points[j-1],t=b.points[j],horizontal=p.y===q.y;
+  if(horizontal!==(r.y===t.y))continue;
+  const distance=Math.abs(horizontal?p.y-r.y:p.x-r.x);if(distance>=12)continue;
+  const lo=Math.max(Math.min(horizontal?p.x:p.y,horizontal?q.x:q.y),Math.min(horizontal?r.x:r.y,horizontal?t.x:t.y));
+  const hi=Math.min(Math.max(horizontal?p.x:p.y,horizontal?q.x:q.y),Math.max(horizontal?r.x:r.y,horizontal?t.x:t.y));
+  total+=Math.max(0,hi-lo+12)*(12-distance);
+ }
+ return total;
+}
+function separateChannels(page){
+ const edges=[...page.connections].sort((a,b)=>a.id.localeCompare(b.id)),nodes=page.components.filter(c=>c.kind!=='flow');
+ const labels=nodes.map(labelBounds).filter(Boolean),changed=new Set();let trials=0;
+ const length=pts=>pts.slice(1).reduce((n,p,i)=>n+Math.abs(p.x-pts[i].x)+Math.abs(p.y-pts[i].y),0);
+ function valid(e,pts){
+  if(pts.some(p=>p.x<0||p.y<0||p.x>page.width||p.y>page.height))return false;
+  if(!facing(pts[0],pts[1],e.resolvedPorts.from)||!facing(pts.at(-1),pts.at(-2),e.resolvedPorts.to))return false;
+  for(let i=1;i<pts.length;i++){
+   const a=pts[i-1],b=pts[i];if(a.x!==b.x&&a.y!==b.y)return false;
+   if(i>1){const prev=pts[i-2];if((prev.x===a.x&&a.x===b.x)||(prev.y===a.y&&a.y===b.y))return false;}
+   const boxes=nodes.filter(n=>!(i===1&&n.id===e.from)&&!(i===pts.length-1&&n.id===e.to)).map(n=>rect(n,12));
+   if(segmentBlocked(a,b,[...labels,...boxes]))return false;
+  }
+  return true;
+ }
+ for(let pass=0;pass<4&&trials<1024;pass++){
+  let progress=false;
+  for(const e of edges){
+   if(e.routeStatus!=='ok'||e.points.length<4)continue;
+   const others=edges.filter(other=>other!==e),before=others.reduce((sum,o)=>sum+channelPenalty(e,o),0);if(before===0)continue;
+   let best=null,score=before,cost=Infinity;
+   for(let i=1;i<e.points.length-2&&trials<1024;i++)for(const offset of [-16,16,-32,32,-48,48,-64,64,-80,80,-96,96]){
+    if(++trials>1024)break;
+    const pts=e.points.map(p=>({...p})),key=pts[i].y===pts[i+1].y?'y':'x';pts[i][key]=round(pts[i][key]+offset);pts[i+1][key]=round(pts[i+1][key]+offset);
+    const candidate=simplify(pts);if(candidate.length<2||!valid(e,candidate))continue;
+    const penalty=others.reduce((sum,o)=>sum+channelPenalty({...e,points:candidate},o),0),candidateCost=(candidate.length-2)*80+length(candidate)+Math.abs(offset)/1000;
+    if(penalty<score-0.001||(penalty<before-0.001&&Math.abs(penalty-score)<0.001&&candidateCost<cost)){best=candidate;score=penalty;cost=candidateCost;}
+   }
+   if(best){e.points=best;e.routeInfo.bends=best.length-2;e.routeInfo.channelAdjusted=true;e.routeInfo.reason='为区分独立管线调整中间通道，端点和流向保持不变';changed.add(e.id);progress=true;}
+  }
+  if(!progress)break;
+ }
+ return [...changed].map(connectionId=>({code:'channel-adjusted',connectionId,message:'独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变'}));
+}
 export function routePage(input) {
  const page=clone(input),nodes=page.components.filter(c=>c.kind!=='flow'),byId=new Map(nodes.map(c=>[c.id,c])),diagnostics=[];
  page.connections=(page.connections||[]).map(edge=>{
@@ -108,7 +157,7 @@ export function routePage(input) {
    if(best){best.routeInfo.autoPortAdjusted=true;best.routeInfo.reason='默认端口通道受阻，已改用其他端口避开设备或名称';diagnostics.push({code:'port-adjusted',connectionId:edge.id,message:best.routeInfo.reason});return best}
    diagnostics.push({code:'route-blocked',connectionId:edge.id,message:initial.message});return {...edge,points:[],resolvedPorts:null,routeInfo:null,routeStatus:'blocked',routeError:initial.message};
   }
- });diagnostics.push(...connectionCrossings(page.connections));return {page,diagnostics};
+ });diagnostics.push(...separateChannels(page),...connectionCrossings(page.connections));return {page,diagnostics};
 }
 export function optimizePage(input) {
   if(input.components.some(c=>c.kind==='flow'))throw Error('此画面含旧版手绘管线，请先为管线指定起止设备，再整体优化；当前画面保持不变');
