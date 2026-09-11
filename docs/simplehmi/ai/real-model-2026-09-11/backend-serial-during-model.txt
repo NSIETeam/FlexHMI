@@ -1,0 +1,167 @@
+✔ protected access stores only hashes, rejects anonymous and forged owner requests, and honors expiry/revocation (2065.815625ms)
+✔ server capability checks cannot be bypassed using client scope, direct save, legacy write or physical-write flags (1523.136875ms)
+✔ real FUXA enforces token roles, gates upstream HTTP and sockets, and revoked control returns to manual (15047.175042ms)
+✔ Agent writes bind exact device, revision, current value and declared range (3.433791ms)
+✔ Agent writes reject stale, future, null and untyped target data before actuation (0.758ms)
+✔ physical target authorization and tag data type are checked before writing (0.398041ms)
+✔ agent deletion repairs all dependent bindings and reports runtime impact (43.131708ms)
+✔ component deletion cascades connections; invalid plans never mutate input (14.674917ms)
+✔ topological layout respects lock and leaves no overlapping nodes (7.305834ms)
+✔ orthogonal routing avoids obstacle and follows moved endpoints (10.173542ms)
+✔ unroutable ports produce a blocking diagnostic, not fake straight lines (0.780875ms)
+✔ mode validation distinguishes available configuration from future execution (2.291542ms)
+✔ different equipment sizes align their visible ports with no gratuitous elbow (0.966208ms)
+✔ reversed and vertical flows point toward destination with the appropriate side (7.515667ms)
+✔ offset horizontal ports use a centered corridor instead of tiny end stubs (1.245833ms)
+✔ manual flow drawings cannot silently disconnect during automatic layout (0.968ms)
+✔ process optimization preserves unconnected titles, controls and cards while aligning equipment (16.780625ms)
+✔ type conversion preserves the complete engineering configuration and reports executable consequences (70.405708ms)
+✔ model settings reject insecure remote URLs and credentials never persist or move to a new destination (17.1125ms)
+✔ generation wait settings validate bounds and survive restart without persisting credentials (13.942291ms)
+✔ each job snapshots its wait budget and terminal elapsed time stays fixed (66.149542ms)
+✔ a model output becomes a checked preview only, never applies to the live project (16.1275ms)
+✔ invalid model operations get exactly one repair and a second invalid answer fails (84.359792ms)
+✔ concurrent engineering edits invalidate model output rather than replacing the revision (13.759042ms)
+✔ cancellation and timeout cannot produce a late preview (35.471875ms)
+✔ both provider wire protocols parse valid JSON; redirect does not leak bearer token (101.171041ms)
+✔ plan schema is valid draft-07 and model cannot choose actor or revision (1157.63425ms)
+✔ model transport bounds decompressed data and cancellation closes pending headers and bodies (173.028208ms)
+✔ assessment archive survives restart, searches and pages without leaking full observations into lists (235.143667ms)
+✔ same-side return ports use two bends without an artificial last jog (9.189792ms)
+✔ cycles unfold into ordered equipment and an outside return; repeated optimization is stable (11.258583ms)
+✔ branch ordering follows upstream paths and does not depend on input array order (31.173417ms)
+✔ automatic ports avoid equipment labels; explicit obstructed ports explain failure (7.253833ms)
+✔ crossing diagnostics distinguish a visual crossover from actual connectivity (0.774458ms)
+✔ connection editor previews preserve equipment, support reversed arrows and reset automatic ports (24.574625ms)
+✔ connection hit targets exist only in editor markup and all text is escaped (62.127ms)
+✔ runtime flow only animates fresh true Bool values and stops on stale data (0.624417ms)
+✔ hysteresis, stable duration and minimum interval prevent chattering (26.948292ms)
+✔ fresh false permissive requests off; stale data faults without inventing a safe output (4.007958ms)
+✔ manual takeover persists and restarting or configuration changes never auto-arm (3.884791ms)
+✔ external output changes and unverified writes fault rather than being silently overwritten (5.931208ms)
+✔ physical output requires exact session scope and data readiness (4.726583ms)
+✔ validation rejects inverted thresholds, shared output and unauthorized tag types (1.155375ms)
+✔ deleting control dependencies disables the rule with a visible impact instead of leaving a live dangling action (12.19075ms)
+✔ takeover during an in-flight write prevents subsequent rules from writing (4.116625ms)
+▶ SimpleHMI real FUXA integration
+  ✔ simulation runs through FUXA and supports writes (2537.328333ms)
+  ✔ Agent point write is guarded, verified and audited (570.254375ms)
+  ✔ layout saves and reloads without stopping devices (199.601625ms)
+  ✔ ordinary HTTP saves journal normalized changes and a repeated save preserves live simulation (503.107458ms)
+  ✔ invalid and read-only requests fail honestly (468.922416ms)
+  ✖ connection probe performs a real Modbus read (432.706834ms)
+  ✔ failed connection probe returns an error without crashing server (29.379584ms)
+  ✔ FUXA Modbus reads, writes register with scale, writes coil and verifies readback (6862.616875ms)
+  ✔ Agent physical write requires authorization and matches test slave readback (934.017708ms)
+  ✔ automatic Modbus control needs session authorization and verifies actual coil readback (445.949708ms)
+  ✔ Agent step flow drives a real Modbus test slave through idle, running and stopped outputs (5517.398667ms)
+  ✔ disconnect becomes stale and cannot report successful write (4884.923958ms)
+  ✔ switch project clears previous device and history exists (3228.97075ms)
+  ✔ server restart restores active saved project (11899.046792ms)
+  ✔ agent previews without mutation, applies once, and rejects stale competing plans (8105.992041ms)
+  ✔ AI HTTP generation uses configured provider and produces an unapplied checked preview (447.302083ms)
+  ✔ water process runs through FUXA with independent opposite levels, conservation and stop/resume (6195.999917ms)
+  ✔ water rules automatically start and stop with readback; manual takeover and restart stay manual (16526.704084ms)
+  ✔ industry assessment persists exact citations, rejects changed conditions and applies a fresh reviewed strategy (3649.682ms)
+  ✖ built-in AI and external assessments preserve step citations through apply, restart and dependent invalidation (8178.184708ms)
+✖ SimpleHMI real FUXA integration (90130.148917ms)
+✖ cross-origin mutation is rejected (188.419209ms)
+✔ IPC controller owns one runtime, authenticates launches and stops only its child (4768.901625ms)
+✔ Unix controller recovers a dead socket and keeps long data paths out of sockaddr (7142.313708ms)
+✔ model-generated steps inherit verified citations and stop when their basis changes or expires (346.655791ms)
+✔ long model waits never extend the three-minute assessment observation lifetime (34.339959ms)
+✔ knowledge validation, Chinese retrieval, exact version increments and expired sources (316.020791ms)
+✔ citations require exact source excerpts and every observed value has a valid interval (1.739541ms)
+✔ application checks data drift, source mutation, expiration and observed tag configuration (285.03575ms)
+✔ knowledge changes and deletes disable dependent rules and appear in plan changes (299.986916ms)
+✔ model assessment receives selected evidence, creates a cited preview, and never auto-executes (101.791708ms)
+✔ empty-action assessment is a report and does not fabricate a modification (29.295125ms)
+✔ an armed rule faults when its cited source expires, without writing another output (15.407333ms)
+✔ alignment preserves dimensions and aligns selected bounds (136.105459ms)
+✔ unequal width objects get equal gaps without overlap (1.15375ms)
+✔ group dragging snaps and clamps without changing internal spacing (4.165292ms)
+✔ 112 upstream symbols have unique ids and valid non-clipping viewboxes (218.827042ms)
+✔ saved project lifecycle preserves exact archived content and refuses stale or active targets (335.642ms)
+✔ new projects and restore destinations are checked again immediately before mutation (166.684583ms)
+✔ SIGKILL before-save reconciles the journal without replaying an interrupted operation (6674.630833ms)
+✔ SIGKILL after-save reconciles the journal without replaying an interrupted operation (8396.388ms)
+✔ restart reconciles archived files and reports corrupt journal records without blocking the service (5066.981667ms)
+✔ history restoration previews all overwritten changes, rejects races, is replay-safe and persists (6470.631708ms)
+✔ restoring deleted knowledge uses a new historical high-water version and invalidates old rule evidence (5162.595ms)
+✔ history restoration refuses cross-project switches, archived-file plans and missing snapshots (1.270458ms)
+✔ history restore SIGKILL before-save does not repeat or lose a confirmed result (9603.123ms)
+✔ history restore SIGKILL after-save does not repeat or lose a confirmed result (7420.46125ms)
+✔ ordinary saves retain before/after history, skip no-ops, reject conflicts and restore through the same plan API (6801.510917ms)
+✔ ordinary save SIGKILL before-save is reconciled without repeating the save (11718.055375ms)
+✔ ordinary save SIGKILL after-save is reconciled without repeating the save (2809.233459ms)
+✔ editor save rechecks authorization after asynchronous preparation before journaling or activation (20.580458ms)
+✔ sequence waits for dwell/stable conditions, verifies outputs, completes and monitors its terminal state (25.22575ms)
+✔ conditions must remain stable and priority explicitly chooses among matching branches (8.832083ms)
+✔ sequence stale faults without forcing an invented safe value (12.849791ms)
+✔ sequence external faults without forcing an invented safe value (10.701083ms)
+✔ sequence timeout faults without forcing an invented safe value (5.288833ms)
+✔ sequence guard faults without forcing an invented safe value (4.273708ms)
+✔ a fresh controller requires explicit arming and initial outputs; exact physical scope includes every machine target (8.164917ms)
+✔ evidence expiring during single output stops the step and records already verified writes (16.738667ms)
+✔ evidence expiring during multiple outputs stops the step and records already verified writes (9.835667ms)
+✔ a later action failure leaves prior verified writes recorded, does not advance state and never rolls back outputs (8.710584ms)
+✔ takeover during an in-flight step prevents later actions (5.531958ms)
+✔ Float32 readback accepts representable quantization but detects a different register value (18.336708ms)
+✔ validation rejects unreachable graphs, ambiguous priorities, missing action vectors, duplicate controllers and out-of-range writes (12.26075ms)
+✔ Agent point deletion and changed knowledge disable dependent machines with visible impact (17.771083ms)
+✔ an output used by the trigger is captured before this transition writes its complete vector (6.009833ms)
+✔ a timeout during a multi-output transition prevents the remaining write and records the machine identity (10.429208ms)
+✔ disabled broken dependencies remain editable but invalid graph structure is still rejected (2.37075ms)
+✔ a configured return transition repeats the sequence while preserving the minimum switch interval (7.860167ms)
+✔ the importable three-step water demo validates and starts with stopped simulation outputs (3.75475ms)
+✔ expired authorization during a step finishes the issued readback and stops remaining actions (4.194208ms)
+✔ waste project preserves process units, streams, controls, and bindings (7.827458ms)
+✔ process starts, warms up, alarms, recovers, then stops (6.015334ms)
+✔ two tanks conserve water and move in opposite directions with unequal capacity (12.274208ms)
+✔ stopping holds both tank levels and flow is zero; restarting resumes transfer (10.990166ms)
+✔ full destination and dry source limit exact transfer without creating or losing water (0.439084ms)
+✔ water demo binds separate levels, actual pump feedback and writable command with straight routes (558.264042ms)
+✔ first launch and project demo entry use the same physically coupled water model (1.32025ms)
+ℹ tests 123
+ℹ suites 0
+ℹ pass 119
+ℹ fail 2
+ℹ cancelled 2
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 235221.218209
+
+✖ failing tests:
+
+test at tests/integration.cjs:29:10
+✖ connection probe performs a real Modbus read (432.706834ms)
+  AssertionError [ERR_ASSERTION]: {"error":"无法连接设备，请检查 IP、端口及网络"}
+  
+  400 !== 200
+  
+      at request (<workspace>/outputs/SimpleHMI/tests/integration.cjs:6:281)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (<workspace>/outputs/SimpleHMI/tests/integration.cjs:29:150)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async TestContext.<anonymous> (<workspace>/outputs/SimpleHMI/tests/integration.cjs:29:2)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/integration.cjs:130:10
+✖ built-in AI and external assessments preserve step citations through apply, restart and dependent invalidation (8178.184708ms)
+  'test did not finish before its parent and was cancelled'
+
+test at tests/integration.cjs:9:1
+✖ SimpleHMI real FUXA integration (90130.148917ms)
+  'test timed out after 90000ms'
+
+test at tests/integration.cjs:185:10
+✖ cross-origin mutation is rejected (188.419209ms)
+  'test could not be started because its parent finished'

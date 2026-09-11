@@ -10,13 +10,15 @@
 
 产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.3 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.5 MB，ARM64 约 56.6 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
 
-AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务，尚未用真实账号验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
+AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务；真实本机小模型已调用，但完整工程生成未通过验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
 
 macOS **0.4.3 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
 ## 当前源码：系统类型入口
 
 新建工程可直接选择数据可视化、智能控制或行业 AI 系统；点击顶部当前类型或“项目 → 更改类型”可预览并转换已有工程。保留画面、设备、变量及控制配置，应用后自动控制保持暂停。详见 [操作与验证记录](docs/simplehmi/ai/project-modes/README.md)。本次入口改进尚未包含在已发布的 0.4.3 安装包中。
+
+AI 模型等待时间也可在设置中调整为 30–900 秒，任务显示实际耗时并支持取消。普通生成不再受独立的五分钟网络等待限制；行业评估仍需在采样的三分钟有效期内完成。详见 [模型设置](docs/simplehmi/ai/MODEL-SETUP.md)。此改进同样属于当前源码，尚未进入 0.4.3 安装包。真实模型的失败记录与验证边界见 [本机模型试验](docs/simplehmi/ai/real-model-2026-09-11/README.md)。
 
 ## 0.4.3 新增功能
 
@@ -248,7 +250,7 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 
 当前源码统一采用用户选定的黑白品牌：白色面板、深灰文字、黑色主操作和单色 Logo；状态、报警及已有工艺配色保留语义。编辑器、运行页和桌面启动页使用同一套品牌资产。主题在 `simplehmi/brand.css`，图标来源在 `simplehmi/assets/brand/README.md`。
 
-新增 AI 工作台与本机 Agent 工程计划接口，支持预览、关联影响、版本冲突检查、幂等应用和审计。支持 OpenAI 兼容 / 本机 Ollama 生成工程计划、一次修复和取消；尚未用真实模型账号验收质量。内置示例为确定性生成；已接入阈值回差控制执行器和人工接管；行业知识评估已接入版本化资料、精确引用和实时条件校验；内置资料仅用于演示。完整边界与调用方法见 `docs/simplehmi/ai/AGENT-API.md`，持续目标见 `docs/simplehmi/ai/GOAL.md`。
+新增 AI 工作台与本机 Agent 工程计划接口，支持预览、关联影响、版本冲突检查、幂等应用和审计。支持 OpenAI 兼容 / 本机 Ollama 生成工程计划、一次修复和取消；真实本机小模型的完整工程生成未通过验收。内置示例为确定性生成；已接入阈值回差控制执行器和人工接管；行业知识评估已接入版本化资料、精确引用和实时条件校验；内置资料仅用于演示。完整边界与调用方法见 `docs/simplehmi/ai/AGENT-API.md`，持续目标见 `docs/simplehmi/ai/GOAL.md`。
 
 新的 `connections` 按设备实际图形端口布线；同轴直连、错位使用居中折线、拖动后重算，箭头由源到目标。自动布局优先对齐端口。旧版没有起止设备的 `flow` 手绘管线需先迁移，不能直接整体优化。
 

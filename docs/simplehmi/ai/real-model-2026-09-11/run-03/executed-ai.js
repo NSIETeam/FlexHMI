@@ -129,7 +129,7 @@ function createAi({dir, getProject, getValues=()=>({}), digest, previewPlan, val
           }
         }
       } catch (e) {
-        if (job.status !== 'cancelled') { job.status = 'failed'; job.error = job.timedOut ? (isAssessment ? '行业评估超时，工程未修改；请重新采样并评估（观测有效期为 3 分钟）' : `模型生成超时（等待上限 ${job.timeoutMs / 1000} 秒），工程未修改；${selected.timeoutSeconds < 900 ? "可在模型服务设置中延长等待时间或分步生成" : "请使用更快的模型或分步生成"}`) : String(e.message).split(secret || '\u0000').join(secret ? '[已隐藏]' : '\u0000').slice(0, 1000); job.stage = '生成未完成，工程未修改'; audit({event: 'ai-failed', jobId: job.id}); }
+        if (job.status !== 'cancelled') { job.status = 'failed'; job.error = job.timedOut ? (isAssessment ? '行业评估超时，工程未修改；请重新采样并评估（观测有效期为 3 分钟）' : `模型生成超时（等待上限 ${job.timeoutMs / 1000} 秒），工程未修改；可在模型服务设置中延长等待时间或分步生成`) : String(e.message).split(secret || '\u0000').join(secret ? '[已隐藏]' : '\u0000').slice(0, 1000); job.stage = '生成未完成，工程未修改'; audit({event: 'ai-failed', jobId: job.id}); }
       } finally { job.finishedAt ||= Date.now(); clearTimeout(timer); }
     })();
     return view(job);

@@ -1,0 +1,3 @@
+Error: Assessment UI timeout: 
+    at until (<workspace>/outputs/SimpleHMI/scripts/browser/assessment-history.cjs:7:134)
+    at async <workspace>/outputs/SimpleHMI/scripts/browser/assessment-history.cjs:66:3

@@ -16,13 +16,22 @@ async function stop(child){if(!child||child.exitCode!==null)return;await new Pro
   start();await until(async()=> (await api('status')).ready);
   const {waterDemo}=await import('../../simplehmi/water-demo.mjs'),p=waterDemo('industry-ai','report_browser');await api('project',p);
   await until(async()=> (await api('values')).values.total_volume?.quality==='good');
-  model=http.createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const context=JSON.parse(JSON.parse(body).messages[1].content).evidenceContext;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(report(context))}}]}))});
+  let modelCancelled=false;
+  model=http.createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const context=JSON.parse(JSON.parse(body).messages[1].content).evidenceContext;
+   if(!context){res.on('close',()=>{modelCancelled=true});return;}
+   res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(report(context))}}]}))});
   await new Promise(r=>model.listen(0,'127.0.0.1',r));
   browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'})});
   tab=await browser.newPage({viewport:{width:1440,height:1000},locale:'zh-CN'});const errors=[];tab.on('pageerror',e=>errors.push(e.message));
   await tab.goto(base);await tab.getByRole('button',{name:'AI 工作台',exact:true}).click();
-  await tab.locator('#ai-model').fill('assessment-protocol-fixture');await tab.locator('#ai-base-url').fill('http://127.0.0.1:'+model.address().port+'/v1');await tab.locator('#ai-save-config').click();
+  await tab.locator('#ai-model').fill('assessment-protocol-fixture');await tab.locator('#ai-base-url').fill('http://127.0.0.1:'+model.address().port+'/v1');await tab.getByLabel('生成等待时间（秒）',{exact:true}).fill('900');await tab.locator('#ai-save-config').click();
   await until(async()=>!(await tab.locator('#ai-generate').isDisabled()));
+  assert.equal((await api('ai/config')).timeoutSeconds,900);
+  await tab.locator('#ai-prompt').fill('等待并验证取消，不应用工程修改。');const unchanged=(await api('agent/state')).revision;
+  await tab.locator('#ai-generate').click();await tab.locator('#ai-job-status').getByText(/已用 \d+ 秒 \/ 最多 900 秒/).waitFor();
+  assert.equal(await tab.locator('#ai-save-config').isDisabled(),true);await tab.screenshot({path:path.join(artifacts,'FlexHMI-模型生成耗时.png')});
+  await tab.locator('#ai-cancel').click();await tab.locator('#ai-job-status').getByText(/已取消，(未修改工程|工程未修改)/).waitFor();await until(()=>modelCancelled);
+  assert.equal((await api('agent/state')).revision,unchanged);assert.equal(await tab.locator('#ai-generate').isDisabled(),false);
   await tab.locator('#ai-task').selectOption('assess');await tab.locator('#ai-prompt').fill('核对演示总水量，条件满足时保留无改动报告。');
   await tab.locator('#ai-evidence-options details').nth(1).evaluate(e=>e.open=true);
   for(const box of await tab.locator('[data-ai-observe]').all())await box.setChecked((await box.getAttribute('data-ai-observe'))==='total_volume');
@@ -30,7 +39,7 @@ async function stop(child){if(!child||child.exitCode!==null)return;await new Pro
   assert.equal((await api('agent/state')).revision,before.revision);assert.equal(await tab.locator('#agent-apply').isDisabled(),true);
   const saved=(await api('industry/evaluations?source=model')).records[0];assert.ok(saved.id);await tab.getByRole('button',{name:'关闭',exact:true}).click();
   await stop(backend);start();await until(async()=> (await api('status')).ready);await tab.reload();
-  await tab.getByRole('button',{name:'AI 工作台',exact:true}).click();await tab.locator('#agent-assessments').click();
+  await tab.getByRole('button',{name:'AI 工作台',exact:true}).click();await until(async()=>await tab.locator('#ai-timeout').inputValue()==='900');assert.equal((await api('ai/config')).timeoutSeconds,900);await tab.locator('#agent-assessments').click();
   await tab.locator(`[data-evaluation-id="${saved.id}"]`).click();await tab.getByText('当前总水量符合该演示模型的记录，本次无需修改工程。',{exact:true}).waitFor();
   assert.equal(await tab.locator('#agent-apply').isDisabled(),true);assert.equal((await api('industry/evaluations/'+saved.id)).source,'model');
   await tab.locator('#agent-result').evaluate(e=>e.scrollIntoView({block:'start',behavior:'instant'}));await until(async()=>{const r=await tab.locator('#agent-result').boundingBox(),b=await tab.locator('.agent-dialog .dialog-body').boundingBox();return r.y>=b.y&&r.y+r.height<=b.y+b.height});await tab.screenshot({path:path.join(artifacts,'FlexHMI-重启后找回评估.png')});
@@ -54,10 +63,14 @@ async function stop(child){if(!child||child.exitCode!==null)return;await new Pro
   await tab.getByText('状态：已应用',{exact:true}).waitFor();assert.equal(await tab.locator('#agent-apply').isDisabled(),true);
   await tab.setViewportSize({width:767,height:700});await tab.locator('#agent-assessments').click();await until(async()=>await tab.locator('[data-evaluation-id]').count()===20);
   await tab.locator('#agent-assessments-panel').evaluate(e=>e.scrollIntoView({block:'start',behavior:'instant'}));
-  await until(async()=>{const r=await tab.locator('#agent-assessments-panel').boundingBox(),b=await tab.locator('.agent-dialog .dialog-body').boundingBox();return r.y>=b.y&&r.y<b.y+60});assert.ok(await tab.locator('[data-evaluation-id]').first().evaluate(e=>{const r=e.getBoundingClientRect(),s=e.querySelector('span').getBoundingClientRect();return s.x-r.x<20}));const bounds=await tab.locator('#dialog').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=767);
+  await until(async()=>{const r=await tab.locator('#agent-assessments-panel').boundingBox(),b=await tab.locator('.agent-dialog .dialog-body').boundingBox();if(r.y>=b.y&&r.y<b.y+60)return true;
+   // A prior application smooth-scroll can still be settling after viewport resize.
+   // Reassert the test's requested position; keep the visibility assertion unchanged.
+   await tab.locator('#agent-assessments-panel').evaluate(e=>e.scrollIntoView({block:'start',behavior:'instant'}));return false;
+  });assert.ok(await tab.locator('[data-evaluation-id]').first().evaluate(e=>{const r=e.getBoundingClientRect(),s=e.querySelector('span').getBoundingClientRect();return s.x-r.x<20}));const bounds=await tab.locator('#dialog').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=767);
   assert.equal(await tab.locator('#assessment-search').evaluate(e=>e.scrollWidth<=e.clientWidth),true);
   await tab.screenshot({path:path.join(artifacts,'FlexHMI-窄屏评估记录.png')});assert.deepEqual(errors,[]);
-  const result={passed:true,browser:'headless Chrome',isolatedData:true,model:'local protocol fixture, not a real LLM',reportGeneratedFromUi:true,noProjectMutation:true,reportSurvivesBackendRestart:true,search:true,pagination:true,sourceFilter:true,latestPlanStatus:true,narrowLayout:true};fs.writeFileSync(path.join(artifacts,'assessment-browser.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+  const result={passed:true,browser:'headless Chrome',isolatedData:true,model:'local protocol fixture, not a real LLM',waitBudgetConfiguredFromUi:true,waitBudgetSurvivesBackendRestart:true,runningElapsedAndBudgetVisible:true,cancelAbortsProvider:true,reportGeneratedFromUi:true,noProjectMutation:true,reportSurvivesBackendRestart:true,search:true,pagination:true,sourceFilter:true,latestPlanStatus:true,narrowLayout:true};fs.writeFileSync(path.join(artifacts,'assessment-browser.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
  }catch(e){if(tab)await tab.screenshot({path:path.join(artifacts,'failure.png')}).catch(()=>{});fs.writeFileSync(path.join(artifacts,'backend-failure.log'),logs);throw e}
  finally{await browser?.close();model?.close();await stop(backend);fs.rmSync(temp,{recursive:true,force:true})}
 })().catch(e=>{console.error(e);process.exitCode=1});

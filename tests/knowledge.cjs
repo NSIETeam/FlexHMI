@@ -39,6 +39,16 @@ test('model-generated steps inherit verified citations and stop when their basis
  assert.equal(writes,0);
 });
 async function fixture(){const {waterDemo}=await import('../simplehmi/water-demo.mjs');const p=waterDemo('industry-ai','industry_test');const values={destination_level:{value:30,ts:Date.now(),quality:'good'},source_level:{value:65,ts:Date.now(),quality:'good'}};return {p,values,request:{prompt:'评估高位水箱补水启停策略',knowledgeIds:['water_control_note'],observedTagIds:['destination_level','source_level']}}}
+test('long model waits never extend the three-minute assessment observation lifetime',async t=>{
+ const {p,values,request}=await fixture(),dir=fs.mkdtempSync(path.join(os.tmpdir(),'hmi-assessment-budget-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const ai=createAi({dir,getProject:()=>p,getValues:()=>values,digest,audit:()=>{},complete:(_c,_k,_m,signal)=>new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(Error('cancelled'))))});
+ for(const timeoutSeconds of [30,900]){
+  ai.configure({provider:'ollama',baseUrl:'http://127.0.0.1:11434',model:'test-fixture',timeoutSeconds});
+  const job=ai.start({...request,task:'assess',mode:'industry-ai',expectedRevision:digest(p)});
+  assert.ok(job.timeoutSeconds<=Math.min(timeoutSeconds,180));assert.ok(job.timeoutSeconds>Math.min(timeoutSeconds,180)-2);
+  ai.cancel(job.id);await ai.wait(job.id);assert.equal(ai.get(job.id).status,'cancelled');
+ }
+});
 function report(ctx){return {summary:'采用有依据的演示回差策略',operations:[{op:'rule.upsert',rule:{id:'water_level_control',onThreshold:35,offThreshold:40}}],assessment:{conclusion:'根据演示回差策略，低液位具备补水条件；参数仅用于该模拟。',citations:[{entryId:'water_control_note',version:1,excerpt:'高位水箱液位 ≤ 35% 时启动供水泵，≥ 40% 时停止供水泵。'}],conditions:Object.keys(ctx.observed).map(id=>({tagId:id,min:id==='destination_level'?25:60,max:id==='destination_level'?35:70}))}}}
 test('knowledge validation, Chinese retrieval, exact version increments and expired sources',async()=>{const {p,values,request}=await fixture();validate(p);assert.ok(searchKnowledge(p,'液位补水').some(e=>e.id==='water_control_note'));const next=structuredClone(p);next.knowledge[0].content+='修改';assert.throws(()=>validateKnowledgeRevision(p,next),/版本/);next.knowledge[0].version++;assert.doesNotThrow(()=>validateKnowledgeRevision(p,next));p.knowledge[1].validUntil='2000-01-01T00:00:00Z';assert.throws(()=>evaluationContext(p,request,values),/过期/);assert.ok(searchKnowledge(p,'')[1].expired||searchKnowledge(p,'').some(e=>e.expired));const invalid=structuredClone(p);invalid.knowledge[0].version=0;assert.throws(()=>validateKnowledge(invalid),/版本/)});
 test('citations require exact source excerpts and every observed value has a valid interval',async()=>{const {p,values,request}=await fixture();const ctx=evaluationContext(p,request,values),out=report(ctx);assert.ok(verifyAssessment(out,ctx).citations[0].contentHash);out.assessment.citations[0].excerpt='不存在的行业标准条款';assert.throws(()=>verifyAssessment(out,ctx),/摘录/);const bad=report(ctx);bad.assessment.conditions[0].max=20;assert.throws(()=>verifyAssessment(bad,ctx),/区间/);const missing=report(ctx);missing.assessment.conditions.pop();assert.throws(()=>verifyAssessment(missing,ctx),/每个/);values.source_level.quality='stale';assert.throws(()=>evaluationContext(p,request,values),/过期/)});

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "browser": "headless Chrome",
+  "isolatedData": true,
+  "model": "local protocol fixture, not a real LLM",
+  "waitBudgetConfiguredFromUi": true,
+  "waitBudgetSurvivesBackendRestart": true,
+  "runningElapsedAndBudgetVisible": true,
+  "cancelAbortsProvider": true,
+  "reportGeneratedFromUi": true,
+  "noProjectMutation": true,
+  "reportSurvivesBackendRestart": true,
+  "search": true,
+  "pagination": true,
+  "sourceFilter": true,
+  "latestPlanStatus": true,
+  "narrowLayout": true
+}

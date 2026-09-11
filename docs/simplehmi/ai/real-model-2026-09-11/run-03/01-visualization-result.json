@@ -1,0 +1,10 @@
+{
+  "id": "gen_9a391e6978584fd2b79942c07649ec08",
+  "status": "failed",
+  "stage": "生成未完成，工程未修改",
+  "attempt": 2,
+  "createdAt": 1789099664819,
+  "elapsedMs": 900085,
+  "timeoutSeconds": 900,
+  "error": "模型生成超时（等待上限 900 秒），工程未修改；可在模型服务设置中延长等待时间或分步生成"
+}

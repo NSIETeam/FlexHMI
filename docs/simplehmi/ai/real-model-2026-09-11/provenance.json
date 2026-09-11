@@ -1,0 +1,11 @@
+{
+  "model": "Qwen3.5-2B Q4_K_M",
+  "modelBytes": 1396198496,
+  "modelSHA256": "57a1085840f497d764a7fc5d346922dbde961efb54cc792ea81d694fd846a1d8",
+  "modelSource": "https://huggingface.co/bartowski/Qwen_Qwen3.5-2B-GGUF",
+  "baseModel": "https://huggingface.co/Qwen/Qwen3.5-2B",
+  "runtime": "llama.cpp b10901",
+  "runtimeSHA256": "ba64da4bb1ba01dce65cd05d36e90d2cb22c7a2fb7cbc90e4911628138a1c34b",
+  "runtimeSource": "https://github.com/ggml-org/llama.cpp/releases/tag/b10901",
+  "bundledWithFlexHMI": false
+}

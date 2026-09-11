@@ -6,21 +6,23 @@
 
 - 兼容接口地址填写 API 根地址（例如服务商的 `https://…/v1`），程序追加 `/chat/completions`。远程连接要求 HTTPS，不跟随重定向。
 - Ollama 地址默认 `http://127.0.0.1:11434`，程序调用 `/api/chat`。模型需由用户预先安装；软件不会自动下载模型。
-- API 密钥只保存在当前后端进程内，关闭服务后需重新填写。磁盘只保存服务类型、地址、模型和 JSON 模式。更换服务地址或类型会清除旧密钥，防止把凭据发往新的服务。
+- API 密钥只保存在当前后端进程内，关闭服务后需重新填写。磁盘只保存服务类型、地址、模型、JSON 模式和生成等待时间。更换服务地址或类型会清除旧密钥，防止把凭据发往新的服务。
 - 点击生成时，需求与当前工程配置（包含设备地址、变量、页面）发送至所配置服务。普通工程生成不发送实时值、历史采样和图形二进制。行业评估会额外发送明确选中的实时点位和知识条目，提交界面会列出选择。不要在工程标签中放入秘密。
 - 兼容服务默认要求 JSON 输出；服务不支持 `response_format` 时可以关闭该选项，但返回内容仍须是完整 JSON 计划。
 
-填写需求后点击 **生成工程计划**。软件将进行工程校验、依赖修复和布线检查；格式或布线失败会让模型修复一次。最多两次输出，120 秒超时。成功只生成预览，点击 **应用此计划** 才会修改工程。
+填写需求后点击 **生成工程计划**。软件将进行工程校验、依赖修复和布线检查；格式或布线失败会让模型修复一次。最多两次输出，共用本次任务的等待上限。成功只生成预览，点击 **应用此计划** 才会修改工程。
+
+当前源码可在模型服务设置中调整 **生成等待时间（秒）**，默认 120，允许 30–900 秒；较慢的本机模型可延长等待。任务显示已用时间与本次上限，设置变更仅影响下一次任务。取消、失败或完成后耗时不再增长。行业评估仍受采样后 3 分钟有效期限制，延长模型等待不会延长观测有效期，过期须重新采样。此设置尚未包含在已发布的 0.4.3 安装包内。
 
 可以随时取消；关闭工作台也会中止尚在运行的生成请求。旧版本工程生成的计划遇到人工修改后不会自动覆盖新工程。运行中的生成任务状态保存在内存，后端重启后需重新生成；已保存预览仍沿用 Agent 计划的持久化规则。已完成的行业评估自动保存为 evaluation 记录（包括无改动报告），任务返回 evaluationId，可从“评估记录”或 /industry/evaluations/:id 重开。
 
 ## 外部调用
 
 - `GET /simplehmi/api/agent/schema`：工程计划 JSON Schema（draft-07）。upsert 是部分更新，新增对象仍须完整；后端工程验证和依赖检查最终决定是否可应用。
-- `GET/POST /simplehmi/api/ai/config`：读取非敏感配置 / 保存配置，POST 字段为 provider、baseUrl、model、jsonMode，可选 apiKey。provider 为 `openai-compatible` 或 `ollama`。
+- `GET/POST /simplehmi/api/ai/config`：读取非敏感配置 / 保存配置，POST 字段为 provider、baseUrl、model、jsonMode，可选 apiKey、timeoutSeconds（30–900 的整数，省略为 120）。provider 为 `openai-compatible` 或 `ollama`。
 - `POST /simplehmi/api/ai/clear-key`：清除本次服务进程中的密钥。
 - `POST /simplehmi/api/ai/generate`：提交 prompt、expectedRevision、mode，返回任务 ID。
-- `GET /simplehmi/api/ai/jobs/:id`：running / ready / failed / cancelled；ready 包含已经检查的 plan。
+- `GET /simplehmi/api/ai/jobs/:id`：running / ready / failed / cancelled；包含 elapsedMs 和本次实际等待上限 timeoutSeconds；ready 包含已经检查的 plan，或无修改的评估 report。
 - `POST /simplehmi/api/ai/jobs/:id/cancel`：停止运行中的生成任务。
 
 生成不开放任意脚本执行，也不直接调用点位写入。智能控制支持生成阈值规则和步骤流程，应用后须在控制面板显式启动；行业知识评估会为这两类策略附上经过验证的资料引用，详见 [INDUSTRY.md](INDUSTRY.md) 和 [CONTROL.md](CONTROL.md)。
@@ -43,6 +45,6 @@
 
 本轮 41 项检查通过，包括真实 FUXA 模拟、Modbus TCP 测试从站、双水箱守恒/启停/边界、Agent 版本冲突/幂等，以及本机测试 HTTP 服务验证两种模型请求格式、生成预览、修复、取消、超时和密钥隔离。测试 HTTP 服务是协议夹具，并非真实大语言模型。
 
-真实模型生成质量和用户服务账号尚未验收；没有默认借用环境中的任何密钥。当前已发布桌面版本为 [0.4.2](../releases/0.4.2.md)，上述 41 项为早期验收记录。2026-09-11 的步骤评估引用修复已通过 117 项后端回归，尚未纳入该安装包；源码验证与发布验证分别记录。
+2026-09-11 已用真实本机 Qwen3.5-2B-Q4_K_M 测试完整双水箱生成；首轮存在绑定和 ID 错误，修复轮达到 900 秒上限，整体未合格。等待配置、网络取消与错误定位已改进，124 项后端测试通过。详见 [真实模型失败记录与证据](real-model-2026-09-11/README.md)。没有借用环境中的密钥。当前已发布桌面版本为 [0.4.3](../releases/0.4.3.md)，本次改动尚未纳入安装包；上述 41 项为早期记录。
 
 接口依据：[OpenAI Chat Completions](https://developers.openai.com/api/reference/resources/chat)、[Ollama Chat](https://docs.ollama.com/api/chat)。
