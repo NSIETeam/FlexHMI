@@ -15,6 +15,27 @@ function upsert(list,value){need(value&&idOk(value.id),'对象需要有效 id');
 function remove(list,id){need(list.some(x=>x.id===id),'找不到要删除的对象：'+id);return list.filter(x=>x.id!==id)}
 function entities(p){const map=new Map();map.set('project/'+p.id,{name:p.name,system:p.system,activePageId:p.activePageId,simulation:p.simulation});for(const d of p.devices){map.set('device/'+d.id,{...d,tags:undefined});for(const t of d.tags)map.set('tag/'+t.id,t)}for(const pg of p.pages){map.set('page/'+pg.id,{...pg,components:undefined,connections:undefined});for(const c of pg.components)map.set('component/'+c.id,c);for(const e of pg.connections||[])map.set('connection/'+e.id,e)}for(const e of p.knowledge||[])map.set('knowledge/'+e.id,e);for(const r of p.control?.rules||[])map.set('rule/'+r.id,r);for(const m of p.control?.machines||[])map.set('machine/'+m.id,m);for(const a of p.customSymbols||[])map.set('asset/'+a.id,a);return new Map([...map].map(([k,v])=>[p.id+'/'+k,v]))}
 function changes(before,after){const a=entities(before),b=entities(after);return [...new Set([...a.keys(),...b.keys()])].flatMap(id=>JSON.stringify(a.get(id))===JSON.stringify(b.get(id))?[]:[{entity:id,action:!a.has(id)?'added':!b.has(id)?'removed':'updated',before:a.get(id)||null,after:b.get(id)||null}])}
+function checkNewReferences(before,p){
+ const same=before.id===p.id,oldPages=same?before.pages:[],oldTags=new Set(same?before.devices.flatMap(d=>d.tags.map(t=>t.id)):[]);
+ const tags=new Set(p.devices.flatMap(d=>d.tags.map(t=>t.id))),oldComponents=new Map(oldPages.flatMap(pg=>pg.components.map(c=>[c.id,c]))),errors=[];
+ const issue=(location,id)=>{if(errors.length<24)errors.push(String(location).slice(0,260)+' → '+String(id).slice(0,90)+'（目标不存在）')};
+ for(const pg of p.pages){
+  const oldPage=oldPages.find(x=>x.id===pg.id),oldEdges=new Map((oldPage?.connections||[]).map(e=>[e.id,e])),oldNodes=new Set((oldPage?.components||[]).map(c=>c.id)),nodes=new Set(pg.components.map(c=>c.id));
+  for(const edge of pg.connections||[])for(const key of ['from','to'])if(!nodes.has(edge[key])&&!(oldEdges.get(edge.id)?.[key]===edge[key]&&oldNodes.has(edge[key])))issue(`画面/${pg.id}/连接/${edge.id}/${key}`,edge[key]);
+  for(const [kind,items,oldItems] of [['组件',pg.components,oldComponents],['连接',pg.connections||[],oldEdges]])for(const c of items){
+   const old=oldItems.get(c.id),location=`画面/${pg.id}/${kind}/${c.id}`;
+   for(const key of ['tagId','valueTag'])if(c[key]&&!tags.has(c[key])&&!(old?.[key]===c[key]&&oldTags.has(c[key])))issue(location+'/'+key,c[key]);
+   for(const detail of c.details||[]){const id=detail.tagId||detail.tag;if(id&&!tags.has(id)&&!(oldTags.has(id)&&old?.details?.some(d=>(d.tagId||d.tag)===id)))issue(location+'/details',id);}
+  }
+ }
+ const ruleReferences=r=>[r.inputTag,r.outputTag,...(r.guards||[]).map(g=>g.tagId)];
+ for(const [kind,items,oldItems,refs] of [['规则',p.control?.rules||[],same?before.control?.rules||[]:[],ruleReferences],['步骤流程',p.control?.machines||[],same?before.control?.machines||[]:[],machineReferences]])for(const item of items){
+  const old=oldItems.find(x=>x.id===item.id),previous=new Set(old?refs(old):[]);
+  for(const id of refs(item))if(!tags.has(id)&&!previous.has(id))issue(kind+'/'+item.id+'/变量',id);
+  for(const citation of item.evidence||[])if(!p.knowledge?.some(e=>e.id===citation.entryId&&e.version===citation.version)&&!old?.evidence?.some(e=>e.entryId===citation.entryId&&e.version===citation.version))issue(kind+'/'+item.id+'/依据',citation.entryId+'@'+citation.version);
+ }
+ if(errors.length){const e=Error('新增或更改的引用无效：'+errors.join('；')+'。请先创建目标或修正引用；自动清理仅适用于已有对象的删除关联。');e.code='invalid-reference';throw e;}
+}
 function repair(p,impacts){
  const tags=new Set(p.devices.flatMap(d=>d.tags.map(t=>t.id))),assets=new Set((p.customSymbols||[]).map(a=>a.id));
  for(const pg of p.pages){const ids=new Set(pg.components.map(c=>c.id));pg.connections=(pg.connections||[]).filter(e=>{if(ids.has(e.from)&&ids.has(e.to))return true;impacts.push({code:'connection-removed',entity:e.id,message:'端点已删除，关联管线自动移除'});return false});
@@ -29,20 +50,20 @@ function repair(p,impacts){
 }
 async function applyOperations(before,request,validate,store,history){
  need(Array.isArray(request.operations)&&request.operations.length>0&&request.operations.length<=500,'每个计划需要 1–500 个操作');
- let p=clone(before);const impacts=[],diagnostics=[],optimize=new Set(),fileConditions=[];let fileEffect=null,revertsPlanId=null;
+ let p=clone(before),referenceBaseline=before;const impacts=[],diagnostics=[],optimize=new Set(),fileConditions=[];let fileEffect=null,revertsPlanId=null;
  const lifecycle=request.operations.filter(op=>['project.create','project.load','project.delete','project.restore','project.revert'].includes(op?.op));need(lifecycle.length<=1,'一个计划只能包含一项工程生命周期或历史恢复操作');
  for(const op of request.operations){need(op&&operations.includes(op.op),'未知操作：'+op?.op);
   const pg=()=>need(p.pages.find(x=>x.id===op.pageId),'找不到画面：'+op.pageId);
   const dev=()=>need(p.devices.find(x=>x.id===op.deviceId),'找不到设备：'+op.deviceId);
   switch(op.op){
    case 'project.create':need(request.operations[0]===op,'新建工程必须是首个操作');need(op.project,'缺少工程');need(op.project.id!==before.id,'新建工程必须使用新的 ID');p=clone(op.project);if(store){need(!store.exists(p.id),'工程 ID 已存在，请使用新的 ID');fileConditions.push({id:p.id,revision:null})}break;
-   case 'project.load':{need(store,'当前上下文不支持保存工程管理');need(request.operations[0]===op,'加载工程必须是首个操作');const result=store.prepare(op,before.id);p=clone(result.project);fileConditions.push(...result.conditions);impacts.push({code:'saved-project-load',entity:p.id,message:'加载所预览版本的已保存工程；自动控制将暂停，通信、历史缓存和手动模拟值可能重置。其他编辑窗口尚未保存的修改不会带入。'});break;}
+   case 'project.load':{need(store,'当前上下文不支持保存工程管理');need(request.operations[0]===op,'加载工程必须是首个操作');const result=store.prepare(op,before.id);p=clone(result.project);referenceBaseline=clone(p);fileConditions.push(...result.conditions);impacts.push({code:'saved-project-load',entity:p.id,message:'加载所预览版本的已保存工程；自动控制将暂停，通信、历史缓存和手动模拟值可能重置。其他编辑窗口尚未保存的修改不会带入。'});break;}
    case 'project.delete':case 'project.restore':{need(store,'当前上下文不支持保存工程管理');need(request.operations.length===1,'删除或恢复保存工程必须单独预览');const result=store.prepare(op,before.id);fileConditions.push(...result.conditions);fileEffect=result.effect;impacts.push({code:fileEffect.action==='delete'?'project-archived':'project-restored',entity:result.project.id,message:fileEffect.action==='delete'?'该保存工程将移入可恢复的归档区；当前运行工程和设备不受影响。':'归档工程将回到工程列表；不会切换当前工程、启动通信或自动控制。'});break;}
    case 'project.revert':{
     need(history,'当前上下文不支持历史版本恢复');need(request.operations.length===1,'历史版本恢复必须单独预览');
     const source=history.read(op.planId);need(source.status==='applied'&&source.before&&!source.fileEffect,'只能恢复已应用的工程修改；归档操作请使用工程恢复');
     need(source.before.id===before.id&&source.project?.id===before.id,'只能恢复当前工程的修改记录；跨工程创建或加载请使用工程列表');
-    p=clone(source.before);revertsPlanId=source.id;
+    p=clone(source.before);referenceBaseline=clone(p);revertsPlanId=source.id;
     const changedKnowledge=(p.knowledge||[]).filter(e=>{const current=before.knowledge?.find(x=>x.id===e.id);return !current||digest(current)!==digest(e)});
     if(changedKnowledge.length){
      const versions=history.knowledgeVersions(before.id);
@@ -78,7 +99,7 @@ async function applyOperations(before,request,validate,store,history){
   }
  }
  if(fileEffect)return {project:p,changes:[{entity:'saved-project/'+fileEffect.projectId,action:fileEffect.action==='delete'?'archived':'restored'}],impacts,diagnostics,blocked:false,fileConditions,fileEffect};
- validateKnowledgeRevision(before,p);repair(p,impacts);p=validate(p);
+ validateKnowledgeRevision(before,p);checkNewReferences(referenceBaseline,p);repair(p,impacts);p=validate(p);
  const {optimizePage,routePage}=await import('../../simplehmi/topology.mjs');
  p.pages=p.pages.map(pg=>{const result=optimize.has(pg.id)?optimizePage(pg):routePage(pg);diagnostics.push(...result.diagnostics.map(d=>({...d,pageId:pg.id})));return result.page});
  p=validate(p);

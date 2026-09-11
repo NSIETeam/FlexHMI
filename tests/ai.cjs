@@ -64,3 +64,9 @@ test('duplicate ID feedback identifies both conflicting objects for model repair
  p=waterDemo('visualization','diagnostic_test');p.devices[0].tags[0].id='prototype';
  assert.throws(()=>validate(p),/ID 无效：设备\/supply\/变量\/prototype/);
 });
+test('model gets actionable dangling-reference feedback and must repair the binding before preview',async t=>{
+ const makePlan=tagId=>({summary:'测试协议：带变量的数值组件',operations:[{op:'project.create',project:{schemaVersion:1,id:'generated_test',name:'绑定修复测试',devices:[{id:'source_device',name:'模拟设备',protocol:'sim',host:'127.0.0.1',port:502,unitId:1,polling:1000,timeout:2000,tags:[{id:'measured_value',name:'数值',address:1,type:'Float32',memory:'400000',divisor:1,initial:20,sim:'manual',writable:false}]}],pages:[{id:'generated_page',name:'总览',width:1280,height:720,components:[{id:'value_view',kind:'number',x:40,y:40,w:200,h:120,tagId}]}]}}]});
+ let calls=0;const f=fixture(t,async(c,k,m)=>{calls++;if(calls===1)return JSON.stringify(makePlan('source_device'));const feedback=JSON.parse(m.at(-1).content);assert.match(feedback.validationError,/value_view\/tagId.*source_device/);assert.equal(f.plans.length,0);return JSON.stringify(makePlan('measured_value'));});
+ const j=f.service.start(f.request());await f.service.wait(j.id);assert.equal(calls,2);assert.equal(f.service.get(j.id).status,'ready');assert.equal(f.plans[0].project.pages[0].components[0].tagId,'measured_value');assert.ok(!f.plans[0].impacts.some(i=>i.code==='binding-cleared'));assert.equal(f.getProject().id,'ai_test');
+ const invalid=fixture(t,async()=>JSON.stringify(makePlan('source_device'))),bad=invalid.service.start(invalid.request());await invalid.service.wait(bad.id);assert.equal(invalid.service.get(bad.id).status,'failed');assert.equal(invalid.plans.length,0);
+});

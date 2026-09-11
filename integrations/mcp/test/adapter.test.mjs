@@ -29,6 +29,8 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   const guide=await client.readResource({uri:'flexhmi://guide'});assert.match(guide.contents[0].text,/expectedRevision/);
   const prompt=await client.getPrompt({name:'build_system',arguments:{requirement:'双水箱供水画面',mode:'visualization'}});assert.match(prompt.messages[0].content.text,/双水箱/);
   const before=await call('flexhmi_state');
+  const badBinding=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:before.revision,summary:'拒绝把设备 ID 当变量 ID',operations:[{op:'component.upsert',pageId:'overview',component:{id:'tank_1',tagId:'supply'}}]}});
+  assert.equal(badBinding.isError,true);assert.equal(badBinding.structuredContent.code,'invalid-reference');assert.match(badBinding.structuredContent.error,/tank_1\/tagId.*supply/);assert.equal((await call('flexhmi_state')).revision,before.revision);
   const plan=await call('flexhmi_preview',{expectedRevision:before.revision,summary:'MCP 添加已绑定变量的画面',operations:[{op:'page.upsert',page:{id:'mcp_page',name:'MCP 生成画面',width:640,height:480,components:[]}},{op:'component.upsert',pageId:'mcp_page',component:{id:'mcp_number',kind:'number',label:'原水箱液位',tagId:'source_level',x:40,y:60,w:240,h:100}}]});assert.equal(plan.blocked,false);assert.equal((await call('flexhmi_state')).revision,before.revision);
   const applied=await call('flexhmi_apply',{planId:plan.id});assert.equal(applied.status,'applied');assert.equal((await call('flexhmi_apply',{planId:plan.id})).replayed,true);
   const state=await call('flexhmi_state');assert.equal(state.project.pages.find(p=>p.id==='mcp_page').components[0].tagId,'source_level');
