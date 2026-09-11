@@ -35,8 +35,10 @@ jobs:
           node --test tests/ipc-launcher.cjs
       - name: Build native desktop DMG
         run: python3 scripts/macos/build.py --work "$RUNNER_TEMP/build" --out "$RUNNER_TEMP/release"
+      - name: Resolve candidate version
+        run: echo "FLEX_VERSION=$(node -p 'require("./package.json").version')" >> "$GITHUB_ENV"
       - name: Install and verify native application
-        run: ./scripts/macos/verify.sh "$RUNNER_TEMP/release/FlexHMI-0.4.1-macOS-${{ matrix.arch }}.dmg" '${{ matrix.arch }}' "$RUNNER_TEMP/evidence"
+        run: ./scripts/macos/verify.sh "$RUNNER_TEMP/release/FlexHMI-$FLEX_VERSION-macOS-${{ matrix.arch }}.dmg" '${{ matrix.arch }}' "$RUNNER_TEMP/evidence"
       - name: Preserve package and evidence
         if: always()
         uses: actions/upload-artifact@v4

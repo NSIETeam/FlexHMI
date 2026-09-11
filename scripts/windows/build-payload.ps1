@@ -32,7 +32,7 @@ $uninstall=Join-Path $work 'uninstall.nsh';$lines=@()
 Get-ChildItem $payload -Recurse -File | ForEach-Object { $relative=[IO.Path]::GetRelativePath($payload,$_.FullName).Replace('$','$$');$lines+='Delete "$INSTDIR\'+$relative+'"' }
 Get-ChildItem $payload -Recurse -Directory | Sort-Object {$_.FullName.Length} -Descending | ForEach-Object { $relative=[IO.Path]::GetRelativePath($payload,$_.FullName).Replace('$','$$');$lines+='RMDir "$INSTDIR\'+$relative+'"' }
 $lines | Set-Content $uninstall -Encoding UTF8
-$output=Join-Path $OutputDirectory "FlexHMI-$version-IPC-Windows-$Arch-Setup.exe"
+$output=Join-Path $OutputDirectory "FlexHMI-$version-Windows-$Arch-Setup.exe"
 $env:NSISDIR=$tools
 & (Join-Path $tools 'Bin/makensis.exe') /V2 "/DPAYLOAD=$payload" "/DPAYLOADGLOB=$payload\*" "/DOUTPUT=$output" "/DARCH=$Arch" "/DVERSION=$version" "/DICON=$root/desktop/icon.ico" "/DLICENSEFILE=$root/LICENSE" "/DUNINSTALLFILES=$uninstall" "$root/desktop/ipc/installer.nsi"
 if($LASTEXITCODE -ne 0){throw 'Windows installer build failed'}

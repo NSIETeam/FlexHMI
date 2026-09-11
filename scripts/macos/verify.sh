@@ -49,10 +49,20 @@ hdiutil detach "$mount" -quiet
 "$node" "$control" --ensure >/dev/null
 "$node" "$repo/scripts/macos/installed-smoke.cjs" "$root" "$artifacts" "$arch" restore
 "$node" "$control" --stop
+# Qualify newly shipped history, steps, authorization and protected restart.
+"$node" "$control" --ensure >/dev/null
+"$node" "$repo/scripts/release/installed-features.cjs" "$root" "$artifacts" "$arch" exercise
+"$node" "$control" --stop
+"$node" "$control" --ensure >/dev/null
+"$node" "$repo/scripts/release/installed-features.cjs" "$root" "$artifacts" "$arch" restore
+"$node" "$control" --stop
+policy="$FLEXHMI_DATA_DIR/_appdata/simplehmi/access/policy.json"
+policy_before="$(shasum -a 256 "$policy")"
 # Application deletion is the macOS uninstall path; it must preserve project files.
 rm -rf "$app"
 test -f "$project"
 test "$(shasum -a 256 "$project")" = "$before"
+test "$(shasum -a 256 "$policy")" = "$policy_before"
 python3 - "$artifacts" "$arch" <<'PY'
 import json,sys,platform
 from pathlib import Path
