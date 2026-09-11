@@ -1,5 +1,7 @@
 # FlexHMI macOS 版
 
+当前版本为 0.4.3，Apple Silicon 与 Intel 安装包均已通过各自的原生安装验证；下载、功能与测试范围见 [0.4.3 发布记录](releases/0.4.3.md)。
+
 Apple Silicon（M 系列）选择 arm64；Intel Mac 选择 x64。目标系统 macOS 13 或更新版本；具体通过的测试系统与安装包哈希见发布说明。
 
 打开 DMG，将 FlexHMI 拖到 Applications（应用程序），然后从应用程序启动。应用内置 Node.js、工业协议依赖和 MCP，使用 macOS 的 WebKit 显示画面，无需 Edge、Chrome、Electron 或单独安装 Node.js。
