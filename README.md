@@ -8,17 +8,17 @@
 
 ## 桌面预览版与 AI 工作台
 
-产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.3 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.5 MB，ARM64 约 56.6 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
+产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.4 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.4-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.1 MB，ARM64 约 56.2 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
 
 AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务；真实本机小模型已调用，但完整工程生成未通过验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
 
-macOS **0.4.3 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
+macOS **0.4.4 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.4-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
-## 当前源码：系统类型入口
+## 系统类型入口
 
-新建工程可直接选择数据可视化、智能控制或行业 AI 系统；点击顶部当前类型或“项目 → 更改类型”可预览并转换已有工程。保留画面、设备、变量及控制配置，应用后自动控制保持暂停。详见 [操作与验证记录](docs/simplehmi/ai/project-modes/README.md)。本次入口改进尚未包含在已发布的 0.4.3 安装包中。
+新建工程可直接选择数据可视化、智能控制或行业 AI 系统；点击顶部当前类型或“项目 → 更改类型”可预览并转换已有工程。保留画面、设备、变量及控制配置，应用后自动控制保持暂停。详见 [操作与验证记录](docs/simplehmi/ai/project-modes/README.md)。本次入口改进已包含在 0.4.4 安装包并通过安装后检查。
 
-AI 模型等待时间也可在设置中调整为 30–900 秒，任务显示实际耗时并支持取消。普通生成不再受独立的五分钟网络等待限制；行业评估仍需在采样的三分钟有效期内完成。详见 [模型设置](docs/simplehmi/ai/MODEL-SETUP.md)。此改进同样属于当前源码，尚未进入 0.4.3 安装包。真实模型的失败记录与验证边界见 [本机模型试验](docs/simplehmi/ai/real-model-2026-09-11/README.md)。
+AI 模型等待时间也可在设置中调整为 30–900 秒，任务显示实际耗时并支持取消。普通生成不再受独立的五分钟网络等待限制；行业评估仍需在采样的三分钟有效期内完成。详见 [模型设置](docs/simplehmi/ai/MODEL-SETUP.md)。此改进已进入 0.4.4 安装包。真实模型的失败记录与验证边界见 [本机模型试验](docs/simplehmi/ai/real-model-2026-09-11/README.md)。
 
 ## 0.4.3 新增功能
 
@@ -288,6 +288,8 @@ MVP 仅监听 loopback，本机使用；未接入极简模式登录、多用户�
 
 新增 8 项连接回归，并用独立 Chrome 完成实际页面操作。测试步骤见 [浏览器验收](integrations/browser/README.md)。所有测试工程均隔离；图形连接不自动定义物理仿真或 PLC 控制逻辑。
 
-后续源码已加强 AI/Agent 引用校验与编辑计划后的预览失效，130 项后端与 4 项 MCP 检查通过；不包含在 0.4.3 安装包，见 [验收记录](docs/simplehmi/ai/reference-integrity/README.md)。
+后续源码已加强 AI/Agent 引用校验与编辑计划后的预览失效，130 项后端与 4 项 MCP 检查通过；已进入 0.4.4 安装包，见 [验收记录](docs/simplehmi/ai/reference-integrity/README.md)。
 
-后续源码修正报警配置与数据无效时的显示，以及带管线画面连续编辑属性失效的问题。132 项后端及报警/编辑浏览器验收通过；尚未进入 0.4.3，见 [验收记录](docs/simplehmi/ai/alarm-verification/README.md)。
+后续源码修正报警配置与数据无效时的显示，以及带管线画面连续编辑属性失效的问题。132 项后端及报警/编辑浏览器验收通过；已进入 0.4.4，见 [验收记录](docs/simplehmi/ai/alarm-verification/README.md)。
+
+0.4.4 已发布四平台安装包，显式回流排序、通道分离及精简打包策略也已纳入。官网使用同一已验证下载清单。见 [版本与范围](docs/simplehmi/releases/0.4.4.md)。
