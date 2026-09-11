@@ -1,0 +1,31 @@
+locator.fill: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#agent-input')[22m
+[2m    - locator resolved to <textarea id="agent-input" spellcheck="false" aria-label="结构化操作计划"></textarea>[22m
+[2m    - fill("{"summary":"错误绑定应被拒绝","operations":[{"op":"component.upsert","pageId":"overview","component":{"id":"tank_1","tagId":"supply"}}]}")[22m
+[2m  - attempting fill action[22m
+[2m    2 × waiting for element to be visible, enabled and editable[22m
+[2m      - element is not visible[22m
+[2m    - retrying fill action[22m
+[2m    - waiting 20ms[22m
+[2m    - waiting for element to be visible, enabled and editable[22m
+[2m  - element was detached from the DOM, retrying[22m
+[2m    - locator resolved to <textarea id="agent-input" spellcheck="false" aria-label="结构化操作计划"></textarea>[22m
+[2m    - fill("{"summary":"错误绑定应被拒绝","operations":[{"op":"component.upsert","pageId":"overview","component":{"id":"tank_1","tagId":"supply"}}]}")[22m
+[2m  - attempting fill action[22m
+[2m    2 × waiting for element to be visible, enabled and editable[22m
+[2m      - element is not visible[22m
+[2m    - retrying fill action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and editable[22m
+[2m      - element is not visible[22m
+[2m    - retrying fill action[22m
+[2m      - waiting 100ms[22m
+[2m    59 × waiting for element to be visible, enabled and editable[22m
+[2m       - element is not visible[22m
+[2m     - retrying fill action[22m
+[2m       - waiting 500ms[22m
+
+    at [workspace]/outputs/SimpleHMI/scripts/browser/acceptance.cjs:25:37 {
+  name: 'TimeoutError'
+}

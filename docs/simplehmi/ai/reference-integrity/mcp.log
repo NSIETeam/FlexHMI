@@ -1,0 +1,20 @@
+
+> flexhmi@0.4.3 test:mcp
+> npm test --prefix integrations/mcp
+
+
+> flexhmi-mcp@0.3.2 test
+> node --test test/*.test.mjs
+
+✔ MCP URL transport is local-only, rejects redirects and reports uncertain write outcomes (0.761292ms)
+✔ MCP validates tool arguments and enforces host scopes without an HTTP request (162.5015ms)
+✔ official MCP stdio client engineers and operates a real FUXA simulation (9925.431416ms)
+✔ MCP starts when the entrypoint is opened through a symlink (177.898875ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10426.5035
