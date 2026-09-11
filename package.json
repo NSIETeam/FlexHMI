@@ -1,6 +1,6 @@
 {
   "name": "flexhmi",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": true,
   "description": "基于 FUXA 的中文极简工控组态 MVP",
   "license": "MIT",

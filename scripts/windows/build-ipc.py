@@ -4,6 +4,9 @@ The former mixed macOS compiler / Windows stub route is deliberately removed.
 """
 from pathlib import Path
 import argparse, shutil, subprocess, hashlib, json, struct, zipfile
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'release'))
+from payload_policy import include_source, prune_development
 p=argparse.ArgumentParser()
 for flag in ['tools','runtime-stage','work','out']: p.add_argument('--'+flag,type=Path,required=True)
 a=p.parse_args(); r=Path(__file__).resolve().parents[2]
@@ -18,6 +21,7 @@ def sha(f): return hashlib.sha256(f.read_bytes()).hexdigest()
 def copy_tracked(src,dst):
  files=subprocess.check_output(['git','ls-files','-z','--',src],cwd=r).decode().split('\0')
  for name in filter(None,files):
+  if not include_source(name):continue
   rel=Path(name).relative_to(src); target=dst/rel
   target.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(r/name,target)
 def machine(f):
@@ -46,13 +50,14 @@ for arch,target,expected in [('x64','x86_64',0x8664),('arm64','aarch64',0xaa64)]
  shutil.copytree(r/'integrations/mcp/node_modules',stage/'integrations/mcp/node_modules',symlinks=True)
  assert (stage/'integrations/mcp/node_modules/@modelcontextprotocol/sdk/package.json').is_file(), 'Install MCP dependencies before staging'
  assert not list((stage/'integrations/mcp/node_modules').rglob('*.node')), 'MCP dependencies must remain architecture independent'
+ dependency_policy={folder:prune_development(stage/folder/'node_modules',r/folder/'package-lock.json') for folder in ['server','integrations/mcp']}
  brand=stage/'simplehmi/assets/brand'
  for f in brand.iterdir():
   if f.name not in ['app-icon-mono.png','README.md']: f.unlink()
  (stage/'desktop/ipc').mkdir(parents=True)
  for f in ['backend.cjs','icon.ico','verify-runtime.ps1']: shutil.copy2(r/'desktop'/f,stage/'desktop'/f)
  shutil.copy2(r/'desktop/ipc/launcher.cjs',stage/'desktop/ipc/launcher.cjs')
- for f in ['LICENSE','README.md','README.FUXA.md','package.json']: shutil.copy2(r/f,stage/f)
+ for f in ['LICENSE','README.FUXA.md','package.json']: shutil.copy2(r/f,stage/f)
  # Capture every packaged first-party source file, excluding dependency caches.
  source_files={str(f.relative_to(stage)).replace('\\','/'):sha(f) for f in sorted(stage.rglob('*')) if f.is_file() and 'node_modules' not in f.parts and 'node' not in f.relative_to(stage).parts}
  rc=work/f'icon-{arch}.rc'
@@ -61,7 +66,7 @@ for arch,target,expected in [('x64','x86_64',0x8664),('arm64','aarch64',0xaa64)]
  subprocess.run([str(compiler/f'{target}-w64-mingw32-windres'),str(rc),str(obj)],check=True)
  subprocess.run([str(compiler/f'{target}-w64-mingw32-clang'),'-Os','-s','-municode','-mwindows',str(r/'desktop/ipc/launcher.c'),str(obj),'-lshell32','-o',str(stage/'FlexHMI.exe')],check=True)
  for f in [stage/'FlexHMI.exe',stage/'node/node.exe',*list((stage/'server/node_modules').rglob('*.node'))]: assert machine(f)==expected,f'Wrong machine: {f}'
- manifest={'version':version,'arch':arch,'sourceCommit':commit,'nodeVersion':'22.23.2','serverLockSHA256':sha(r/'server/package-lock.json'),'sourceFiles':source_files,'nativeLauncherSHA256':sha(stage/'FlexHMI.exe'),'nodeSHA256':sha(stage/'node/node.exe'),'mcpIncluded':True}
+ manifest={'version':version,'arch':arch,'sourceCommit':commit,'nodeVersion':'22.23.2','serverLockSHA256':sha(r/'server/package-lock.json'),'sourceFiles':source_files,'nativeLauncherSHA256':sha(stage/'FlexHMI.exe'),'nodeSHA256':sha(stage/'node/node.exe'),'mcpIncluded':True,'dependencyPolicy':dependency_policy,'documentation':'docs/DESKTOP.md'}
  (stage/'build-provenance.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
  output=out/f'FlexHMI-{version}-IPC-Windows-{arch}-Payload.zip'
  with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:

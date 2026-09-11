@@ -1,7 +1,7 @@
 {
   "name": "flexhmi-desktop",
   "productName": "FlexHMI",
-  "version": "0.3.0",
+  "version": "0.4.4",
   "main": "main.cjs",
   "description": "中文极简工控组态工作台",
   "license": "MIT",

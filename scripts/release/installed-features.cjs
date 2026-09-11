@@ -14,6 +14,7 @@ async function until(fn){for(let i=0;i<150;i++){const value=await fn();if(value)
  const evidenceFile=path.join(artifacts,'installed-features.json');
  if(phase==='exercise'){
   assert.equal((await api('access/status')).enabled,false);const before=await api('agent/state');assert.ok(before.project.devices.every(d=>d.protocol==='sim'));
+  const current=await require('./installed-current.cjs')({root,api,raw});
   const edited=structuredClone(before.project);edited.name+=' · 历史验收';
   const saved=await raw('project',edited,{'If-Match':before.revision});assert.equal(saved.status,200);assert.ok(saved.historyId);
   const history=await api('agent/plans?source=editor&projectId='+before.project.id+'&limit=20');assert.ok(history.some(h=>h.id===saved.historyId));
@@ -36,7 +37,7 @@ async function until(fn){for(let i=0;i<150;i++){const value=await fn();if(value)
   await api('control/arm',{expectedRevision:state.revision},auth);await api('access/tokens/'+full.id+'/revoke',{},owner);await until(async()=>(await api('control/status',undefined,owner)).state==='manual');assert.equal((await raw('agent/state',undefined,auth)).status,401);
   await api('project',before.project,{'If-Match':(await api('agent/state',undefined,owner)).revision,...owner});
   const active=await api('agent/state',undefined,owner);assert.equal(active.revision,before.revision);
-  fs.writeFileSync(evidenceFile,JSON.stringify({arch,platform:process.platform,instance:service.instance,projectId:before.project.id,revision:before.revision,editorHistoryId:saved.historyId,readGrantId:read.id,revokedGrantId:full.id,editorHistoryRestore:true,stepFlowVerifiedWrites:2,waterConserved:true,mcpServerScopeEnforced:true,physicalWriteDenied:true,revokedControlPaused:true,accessEnabled:true,assessments,restartVerified:false},null,2));
+  fs.writeFileSync(evidenceFile,JSON.stringify({arch,platform:process.platform,instance:service.instance,projectId:before.project.id,revision:before.revision,editorHistoryId:saved.historyId,readGrantId:read.id,revokedGrantId:full.id,editorHistoryRestore:true,stepFlowVerifiedWrites:2,waterConserved:true,mcpServerScopeEnforced:true,physicalWriteDenied:true,revokedControlPaused:true,accessEnabled:true,assessments,current,restartVerified:false},null,2));
  }else if(phase==='restore'){
   const old=JSON.parse(fs.readFileSync(evidenceFile));assert.notEqual(service.instance,old.instance);assert.equal((await raw('agent/state')).status,401);assert.equal((await api('access/status')).enabled,true);
   const login=await raw('access/login',{password});assert.equal(login.status,200);const owner={Cookie:login.cookie};const state=await api('agent/state',undefined,owner);assert.equal(state.revision,old.revision);assert.equal((await api('control/status',undefined,owner)).state,'manual');

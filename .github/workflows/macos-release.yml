@@ -31,6 +31,7 @@ jobs:
           npm ci --prefix integrations/mcp
       - name: Check source and controller lifecycle
         run: |
+          python3 scripts/release/test_payload_policy.py
           npm run check
           node --test tests/ipc-launcher.cjs
       - name: Build native desktop DMG
