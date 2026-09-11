@@ -56,7 +56,7 @@ for arch,target,expected in [('x64','x86_64',0x8664),('arm64','aarch64',0xaa64)]
  # Capture every packaged first-party source file, excluding dependency caches.
  source_files={str(f.relative_to(stage)).replace('\\','/'):sha(f) for f in sorted(stage.rglob('*')) if f.is_file() and 'node_modules' not in f.parts and 'node' not in f.relative_to(stage).parts}
  rc=work/f'icon-{arch}.rc'
- rc.write_text(f'1 ICON "{r}/desktop/icon.ico"\n1 VERSIONINFO\nFILEVERSION {version.replace(".",",")},0\nPRODUCTVERSION {version.replace(".",",")},0\nBEGIN\n BLOCK "StringFileInfo"\n BEGIN\n BLOCK "040904b0"\n BEGIN\n VALUE "ProductName", "FlexHMI IPC\\0"\n VALUE "FileDescription", "FlexHMI Industrial PC Edition\\0"\n VALUE "FileVersion", "{version}\\0"\n END\n END\n BLOCK "VarFileInfo"\n BEGIN\n VALUE "Translation", 0x409, 1200\n END\nEND\n')
+ rc.write_text(f'1 ICON "{r}/desktop/icon.ico"\n1 VERSIONINFO\nFILEVERSION {version.replace(".",",")},0\nPRODUCTVERSION {version.replace(".",",")},0\nBEGIN\n BLOCK "StringFileInfo"\n BEGIN\n BLOCK "040904b0"\n BEGIN\n VALUE "ProductName", "FlexHMI\\0"\n VALUE "FileDescription", "FlexHMI Desktop\\0"\n VALUE "FileVersion", "{version}\\0"\n END\n END\n BLOCK "VarFileInfo"\n BEGIN\n VALUE "Translation", 0x409, 1200\n END\nEND\n')
  obj=work/f'icon-{arch}.o'
  subprocess.run([str(compiler/f'{target}-w64-mingw32-windres'),str(rc),str(obj)],check=True)
  subprocess.run([str(compiler/f'{target}-w64-mingw32-clang'),'-Os','-s','-municode','-mwindows',str(r/'desktop/ipc/launcher.c'),str(obj),'-lshell32','-o',str(stage/'FlexHMI.exe')],check=True)

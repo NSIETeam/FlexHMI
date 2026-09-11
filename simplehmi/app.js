@@ -1,3 +1,4 @@
+import {showOwnerLogin} from './access-panel.mjs';
 import {openConnectionEditor} from './connection-editor.mjs';
 import {openKnowledgePanel} from './knowledge-panel.mjs';
 import {openControlPanel} from './control-panel.mjs';
@@ -186,7 +187,7 @@ async function api(url, body) {
   });
   const data = await r.json();
   if(r.ok && r.headers.get("X-Project-Revision")) serverRevision=r.headers.get("X-Project-Revision");
-  if (!r.ok) throw Error(data.error || "服务暂不可用");
+  if (!r.ok) {const error=Object.assign(Error(data.error || "服务暂不可用"),{status:r.status});if(r.status===401&&state.project&&!url.startsWith("/access/"))showOwnerLogin(api).then(()=>toast("已登录，请重试刚才未完成的操作"));throw error;}
   return data;
 }
 function toast(msg) {
@@ -1765,6 +1766,7 @@ async function boot() {
     setInterval(poll, 1000);
     setInterval(hydrateHistory, 15000);
   } catch (e) {
+    if(e.status===401){await showOwnerLogin(api);return boot();}
     $("#app").innerHTML =
       `<div class="loading"><div><p>${esc(e.message)}</p><button class="secondary" id="retry">重新连接</button></div></div>`;
     $("#retry").onclick = boot;

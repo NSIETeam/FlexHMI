@@ -455,7 +455,7 @@ const SHELL_ROUTES = [
 ];
 
 if (process.env.SIMPLEHMI === '1') {
-    require('./simplehmi')(app, runtime, settings, BASE_PATH);
+    require('./simplehmi')(app, runtime, settings, BASE_PATH, io);
 }
 
 app.use(allowCrossDomain);

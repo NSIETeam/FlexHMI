@@ -17,8 +17,8 @@ test('MCP validates tool arguments and enforces host scopes without an HTTP requ
 });
 test('official MCP stdio client engineers and operates a real FUXA simulation', {timeout:60000},async()=>{
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'flex-mcp-')),port=await freePort();let log='',backend,client,readClient;
- async function connect(access='full'){
-  const transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'integrations/mcp/server.mjs')],env:{...process.env,FLEXHMI_URL:`http://127.0.0.1:${port}/simplehmi/api/`,FLEXHMI_ACCESS:access,FLEXHMI_PHYSICAL_WRITES:'0',FLEXHMI_AGENT_ID:'mcp-acceptance'},stderr:'pipe'});transport.stderr.on('data',b=>log+=b);
+ async function connect(access='full',token=''){
+  const transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'integrations/mcp/server.mjs')],env:{...process.env,FLEXHMI_URL:`http://127.0.0.1:${port}/simplehmi/api/`,FLEXHMI_ACCESS:access,FLEXHMI_PHYSICAL_WRITES:'0',FLEXHMI_AGENT_ID:'mcp-acceptance',FLEXHMI_TOKEN:token},stderr:'pipe'});transport.stderr.on('data',b=>log+=b);
   const c=new Client({name:'flexhmi-acceptance',version:'1.0.0'});await c.connect(transport);return c;
  }
  async function call(name,args={}){const result=await client.callTool({name,arguments:args});assert.notEqual(result.isError,true,JSON.stringify(result));return result.structuredContent;}
@@ -73,6 +73,11 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   await call('flexhmi_apply',{planId:flow.id});assert.equal((await call('flexhmi_control_status')).state,'manual');await call('flexhmi_control_arm',{expectedRevision:(await call('flexhmi_state')).revision});
   await until(async()=> (await call('flexhmi_control_status')).machines[0]?.stateId==='running');assert.equal(Number((await call('flexhmi_values')).values.pump_command.value),1);
   await until(async()=> (await call('flexhmi_control_status')).machines[0]?.stateId==='done');assert.equal(Number((await call('flexhmi_values')).values.pump_command.value),0);assert.equal((await call('flexhmi_control_status')).machines[0].writes,2);await call('flexhmi_control_pause');
+
+  const raw=async(route,body,cookie)=>{const r=await fetch(`http://127.0.0.1:${port}/simplehmi/api${route}`,{method:'POST',headers:{'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:JSON.stringify(body)});assert.equal(r.status,200);return {data:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}};
+  const owner=await raw('/access/enable',{password:'test-mcp-owner-password'}),credential=await raw('/access/tokens',{label:'MCP 只读授权',scope:'read',days:7},owner.cookie);
+  await client.close();client=await connect('full',credential.data.token);assert.ok((await call('flexhmi_state')).revision);const denied=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:(await call('flexhmi_state')).revision,summary:'服务端拒绝越权',operations:[{op:'project.configure',name:'Forbidden'}]}});assert.equal(denied.isError,true);assert.equal(denied.structuredContent.status,403);
+  await raw('/access/tokens/'+credential.data.id+'/revoke',{},owner.cookie);const revoked=await client.callTool({name:'flexhmi_state',arguments:{}});assert.equal(revoked.isError,true);assert.equal(revoked.structuredContent.status,401);
 
  }catch(e){e.message+='\n'+log.slice(-2500);throw e}
  finally{await readClient?.close();await client?.close();if(backend&&backend.exitCode===null)await new Promise(r=>{backend.once('exit',r);backend.kill('SIGTERM');setTimeout(()=>{backend.kill('SIGKILL');r()},3000).unref()});fs.rmSync(temp,{recursive:true,force:true});}

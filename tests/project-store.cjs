@@ -99,3 +99,8 @@ for(const phase of ['before-save','after-save'])test('ordinary save SIGKILL '+ph
  const before=(await child.request('/agent/state')).data,pending=child.request('/editor-save',{project:{...p,name:'Edited content'},expectedRevision:before.revision}).catch(()=>null);assert.equal(await child.wait('phase'),phase);const names=fs.readdirSync(path.join(dir,'agent')).filter(n=>n.startsWith('plan_')&&n.endsWith('.json'));assert.equal(names.length,1);const id=names[0].slice(0,-5);await child.stop();await pending;
  child=await startChild(dir);const record=(await child.request('/agent/plans/'+id)).data;assert.equal(record.source,'editor');assert.equal(record.status,phase==='after-save'?'applied':'interrupted');assert.equal((await child.request('/agent/state')).data.project.name,phase==='after-save'?'Edited content':p.name);assert.equal((await child.request('/agent/plans/'+id+'/apply',{})).status,phase==='after-save'?200:400);
 });
+
+test('editor save rechecks authorization after asynchronous preparation before journaling or activation',async t=>{
+ const {dir}=fixture(t),p=validate(project('authorization_race'));let allowed=true,writes=0;const router=require('../server/node_modules/express').Router();const {mountAgent}=require('../server/simplehmi/agent');const agent=mountAgent(router,{dir,validate,getProject:()=>p,serial:fn=>fn(),prepare:async next=>{allowed=false;return validate(next)},activate:async()=>{writes++}});
+ await assert.rejects(agent.saveEditor({...p,name:'should not save'},{checkAccess:()=>{if(!allowed)throw Object.assign(Error('revoked'),{status:403})}}),e=>e.status===403);assert.equal(writes,0);assert.equal(fs.readdirSync(path.join(dir,'agent')).filter(f=>f.startsWith('plan_')).length,0);
+});

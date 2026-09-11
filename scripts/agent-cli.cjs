@@ -5,7 +5,7 @@ const base=new URL(process.env.SIMPLEHMI_URL||'http://127.0.0.1:1881/simplehmi/a
 if(!base.pathname.endsWith('/'))base.pathname+='/';
 if(base.username||base.password||!['http:','https:'].includes(base.protocol))throw Error('请使用不包含凭据的本机 HTTP(S) 地址');
 if(!['127.0.0.1','localhost','[::1]'].includes(base.hostname))throw Error('当前 Agent 接口仅支持本机地址');
-async function api(route,body){const res=await fetch(new URL(route,base),{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await res.json();if(!res.ok)throw Error(`${res.status}: ${data.error}`);return data}
+async function api(route,body){const res=await fetch(new URL(route,base),{method:body===undefined?'GET':'POST',redirect:'error',headers:{'Content-Type':'application/json',...(process.env.FLEXHMI_TOKEN?{Authorization:'Bearer '+process.env.FLEXHMI_TOKEN}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await res.json();if(!res.ok)throw Error(`${res.status}: ${data.error}`);return data}
 async function main(){const [command,arg]=process.argv.slice(2);let data;
  switch(command){
   case 'schema':data=await api('agent/schema');break;

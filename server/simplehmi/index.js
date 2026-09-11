@@ -8,6 +8,7 @@ const {stepWater}=require('./water-simulation');
 const {validateKnowledge,validateKnowledgeRevision,searchKnowledge}=require('./knowledge');
 const {validateControl,controlSignature,createControl}=require('./control');
 const {mountAgent,digest}=require('./agent');
+const {createAccess}=require('./access');
 const {checkPointWrite}=require('./agent-write');
 const {mcpConfiguration}=require('./mcp-config');
 const TYPES=new Set(['text','number','button','switch','lamp','motor','pump','valve','tank','pipe','chart','history','alarm','gauge','symbol','equipment','flow','process-status']);
@@ -45,8 +46,9 @@ function fuxaDevice(p,d){
  property:{address:`${d.host}:${d.port}`,slaveid:String(d.unitId),timeout:+d.timeout,connectionOption:'TcpPort'},
  tags:Object.fromEntries(d.tags.map(t=>{const tid=`sh_${p.id}_${t.id}`;return [tid,{id:tid,name:t.name,type:d.protocol==='sim'?(t.type==='Bool'?'boolean':'number'):t.type,address:String(t.address),memaddress:String(t.memory),divisor:+t.divisor,format:2,init:String(t.initial||0),daq:{enabled:false,changed:false,restored:false,interval:60}}]}))};
 }
-module.exports=function mount(app,runtime,settings,base=''){
+module.exports=function mount(app,runtime,settings,base='',io){
  const dir=path.join(settings.workDir,'simplehmi');fs.mkdirSync(dir,{recursive:true});
+ const access=createAccess({dir,base});app.use(access.upstream);access.bindSockets(io);
  const staticDir=path.resolve(__dirname,'../../simplehmi');
  let active=null,fingerprint='',ready=false,queue=Promise.resolve(),simBusy=false;
  const histories=new Map(),manual=new Map();
@@ -61,8 +63,8 @@ module.exports=function mount(app,runtime,settings,base=''){
   if(p.pages.some(pg=>pg.connections?.length)){const {routePage}=await import('../../simplehmi/topology.mjs');p.pages=p.pages.map(pg=>pg.connections?.length?routePage(pg).page:pg)}
   return p;
  }
- async function activate(p,{pauseControl=false}={}){
-  p=await prepare(p);
+ async function activate(p,{pauseControl=false,checkAccess=()=>{}}={}){
+  p=await prepare(p);checkAccess();
   if(pauseControl||controlSignature(p)!==controlSignature(active))control.pause('工程控制配置变化，自动控制已暂停；请检查后重新启动');
   const next=JSON.stringify([p.id,p.devices,p.simulation]);
   if(next!==fingerprint){
@@ -84,12 +86,14 @@ module.exports=function mount(app,runtime,settings,base=''){
   res.set('Cache-Control','no-store');next();
  });
  router.use(express.json({limit:'3mb'}));
+ router.use(access.middleware);access.mount(router);
+ const assertAccess=req=>access.authorize(req.flexAuth,req.method,req.path,req.body);
  const route=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||(res.statusCode===409?409:400)).json({error:e?.message||'无法连接设备或操作失败，请检查配置',...(e.code?{code:e.code}:{}),...(e.outcomeUnknown?{outcomeUnknown:true}:{})})}};
  router.get('/status',route(async(req,res)=>res.json({ready,instance:process.env.SIMPLEHMI_INSTANCE||null,engine:'FUXA 1.3.4',mode:'local',activeProject:active?.id})));
  router.get('/projects',route(async(req,res)=>res.json(fs.readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>{const p=JSON.parse(fs.readFileSync(path.join(dir,f)));return {id:p.id,name:p.name,updatedAt:fs.statSync(path.join(dir,f)).mtime.toISOString()}}))));
  router.get('/project',route(async(req,res)=>res.set('X-Project-Revision',digest(active)).json(active)));
- router.post('/project',route(async(req,res)=>{const result=await serial(()=>agentApi.saveEditor(req.body,{expectedRevision:req.headers['if-match']}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
- router.post('/load/:id',route(async(req,res)=>{if(!safeId(req.params.id))throw Error('工程 ID 无效');const result=await serial(()=>agentApi.saveEditor(JSON.parse(fs.readFileSync(file(req.params.id))),{expectedRevision:req.headers['if-match'],source:'load',pauseControl:true}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
+ router.post('/project',route(async(req,res)=>{const result=await serial(()=>agentApi.saveEditor(req.body,{expectedRevision:req.headers['if-match'],checkAccess:()=>assertAccess(req)}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
+ router.post('/load/:id',route(async(req,res)=>{if(!safeId(req.params.id))throw Error('工程 ID 无效');const result=await serial(()=>agentApi.saveEditor(JSON.parse(fs.readFileSync(file(req.params.id))),{expectedRevision:req.headers['if-match'],source:'load',pauseControl:true,checkAccess:()=>assertAccess(req)}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
  function snapshotValues(){
   const values={},devices={};
   for(const d of active.devices){let good=0;for(const t of d.tags){const raw=readTag(d,t);const ts=raw?.ts||raw?.timestamp||0;const value=raw?.value;const fresh=value!=null&&ts>0&&Date.now()-ts<Math.max(d.polling*3,3500);values[t.id]={value:fresh?value:null,lastValue:value,ts,quality:fresh?'good':'stale'};if(fresh)good++;}devices[d.id]={connected:good>0,source:d.protocol};}
@@ -112,14 +116,14 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
  const control=createControl({getProject:()=>active,readValues:()=>snapshotValues().values,writeValue,dir});
  router.get('/values',route(async(req,res)=>res.json({...snapshotValues(),control:control.summary()})));
  router.get('/history/:id',route(async(req,res)=>res.json(histories.get(req.params.id)||[])));
- router.post('/write',route(async(req,res)=>{control.takeover(req.body.tagId);res.json(await serial(()=>writeValue(req.body.tagId,req.body.value)))}));
+ router.post('/write',route(async(req,res)=>{control.takeover(req.body.tagId);res.json(await serial(()=>{assertAccess(req);return writeValue(req.body.tagId,req.body.value)}))}));
  router.post('/agent/write',route(async(req,res)=>{
-  const q=req.body,actor=String(req.headers['x-flexhmi-agent']||'local-agent').slice(0,100);
+  const q=req.body,actor=access.actor(req)||String(req.headers['x-flexhmi-agent']||'local-agent').slice(0,100);
   try{
    checkPointWrite(active,snapshotValues().values,q);
    control.takeover(q.tagId);
    const result=await serial(async()=>{
-    const checked=checkPointWrite(active,snapshotValues().values,q);
+    assertAccess(req);const checked=checkPointWrite(active,snapshotValues().values,q);
     agentApi.audit({event:'point-write-requested',actor,projectId:active.id,deviceId:q.deviceId,tagId:q.tagId,value:checked.value,previous:checked.previous});
     try{const out=await writeValue(q.tagId,checked.value);agentApi.audit({event:'point-write-verified',actor,projectId:active.id,tagId:q.tagId,value:out.value});return out}
     catch(e){agentApi.audit({event:'point-write-failed',actor,projectId:active.id,tagId:q.tagId,error:e.message,outcomeUnknown:true});e.outcomeUnknown=true;throw e}
@@ -130,7 +134,7 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
  router.get('/control/events',route(async(req,res)=>res.json(control.events())));
  router.post('/control/arm',route(async(req,res)=>res.json(await serial(async()=>{
   if(req.body.expectedRevision!==digest(active)){res.status(409);throw Error('工程已改变，请重新检查控制规则')}
-  return control.arm(req.body);
+  return control.arm({...req.body,authorization:()=>access.current(req.flexAuth),authorizedBy:req.flexAuth.id});
  }))));
  router.post('/control/pause',route(async(req,res)=>res.json(control.pause())));
  router.post('/test',route(async(req,res)=>{
@@ -143,9 +147,9 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
   if(!client)throw Error('Modbus 驱动依赖未安装');client.init(modbus.ModbusTypes.TCP);client.load(dev);
   let timer;try{await Promise.race([client.connect().catch(()=>{throw Error('无法连接设备，请检查 IP、端口及网络')}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('连接超时')),d.timeout||2000)})]);await client.polling();res.json({ok:true,read,message:read===null?'TCP 已连接，寄存器 1 读取失败；请添加有效点位':'连接成功 · 寄存器 1 当前值：'+read});}finally{clearTimeout(timer);await Promise.race([client.disconnect(),sleep(500)]);}
  }));
- router.get('/agent/mcp-config',route(async(req,res)=>res.json(mcpConfiguration({port:req.socket.localPort,base,workDir:settings.workDir}))));
+ router.get('/agent/mcp-config',route(async(req,res)=>res.json(mcpConfiguration({port:req.socket.localPort,base,workDir:settings.workDir,protectedMode:access.enabled()}))));
  router.get('/knowledge',route(async(req,res)=>res.json({entries:searchKnowledge(active,req.query.q||''),revision:digest(active)})));
- const agentApi=mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,prepare,serial,validate,dir});
+ const agentApi=mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,prepare,serial,validate,dir,assertAccess,authorization:req=>({protectedMode:access.enabled(),kind:req.flexAuth?.kind,scope:req.flexAuth?.scope,physicalWrites:req.flexAuth?.physicalWrites})});
  router.use((err,req,res,next)=>res.status(400).json({error:err.message}));
  app.use(base+'/simplehmi/api',router);
  app.use(base+'/simplehmi',express.static(staticDir));

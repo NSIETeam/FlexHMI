@@ -40,7 +40,7 @@ function controlSignature(p) { return JSON.stringify([p?.id,p?.devices,p?.system
 function createControl({getProject, readValues, writeValue, dir, now = Date.now}) {
   const folder = path.join(dir,'control'); fs.mkdirSync(folder,{recursive:true});
   const logFile = path.join(folder,'events.jsonl');
-  let state = 'manual', reason = '自动控制尚未启动', session = null, generation = 0;
+  let state = 'manual', reason = '自动控制尚未启动', session = null, generation = 0, permission=()=>true;
   const records = new Map(), machineRecords=new Map();
   function audit(event) {
     const record = {at:new Date(now()).toISOString(),projectId:getProject()?.id,...event};
@@ -49,7 +49,7 @@ function createControl({getProject, readValues, writeValue, dir, now = Date.now}
     fs.appendFileSync(logFile,JSON.stringify(record)+'\n');
   }
   function events() { return fs.existsSync(logFile) ? fs.readFileSync(logFile,'utf8').trim().split('\n').filter(Boolean).slice(-200).map(line=>JSON.parse(line)) : []; }
-  function status() { return {state,reason,session:session?{startedAt:session.startedAt,physicalTargets:session.physicalTargets}:null,rules:[...records].map(([id,r])=>({id,...r})),machines:[...machineRecords].map(([id,r])=>({id,...r})),events:events().slice(-20)}; }
+  function status() { return {state,reason,session:session?{startedAt:session.startedAt,physicalTargets:session.physicalTargets,authorizedBy:session.authorizedBy}:null,rules:[...records].map(([id,r])=>({id,...r})),machines:[...machineRecords].map(([id,r])=>({id,...r})),events:events().slice(-20)}; }
   function pause(message = '已切换为人工接管；不会自动改变当前输出') {
     generation++; session = null; state = 'manual'; reason = message;
     if (records.size||machineRecords.size) audit({event:'manual-takeover',message});
@@ -60,7 +60,7 @@ function createControl({getProject, readValues, writeValue, dir, now = Date.now}
     const v = values[id];
     return v && v.quality === 'good' && v.value !== null && (typeof v.value === 'number' || typeof v.value === 'boolean') && finite(Number(v.value)) && finite(v.ts) && v.ts <= now()+1000 && now()-v.ts <= maxAge;
   }
-  function arm({allowPhysical = false, physicalTargets = []} = {}) {
+  function arm({allowPhysical = false, physicalTargets = [],authorization=()=>true,authorizedBy=null} = {}) {
     const p = getProject(); validateControl(p);
     if (!['intelligent-control','industry-ai'].includes(p.system?.mode)) throw Error('请先把工程类型设为智能控制或行业 AI');
     const rules = (p.control?.rules || []).filter(r=>r.enabled);
@@ -75,18 +75,21 @@ function createControl({getProject, readValues, writeValue, dir, now = Date.now}
       if (![r.onValue,r.offValue].some(v=>machinesRuntime.outputEquals(p,r.outputTag,out,v))) throw Error(`规则“${r.name}”当前输出不属于启停值，请先人工调整`);
     }
     const prepared=machines.map(m=>{const errors=citationProblems(p,m,now());if(errors.length)throw Error(errors.join('；'));if(machinesRuntime.references(m).some(id=>!fresh(values,id,m.maxAgeMs)))throw Error(`流程“${m.name}”数据未就绪或已过期`);if(!m.guards.every(g=>compare(Number(values[g.tagId].value),g.op,g.value)))throw Error(`流程“${m.name}”运行允许条件不满足`);return [m.id,machinesRuntime.initialRecord(p,m,values,now())]});
+    if(typeof authorization!=='function'||!authorization())throw Error('控制授权已失效');permission=authorization;
     generation++; records.clear();machineRecords.clear();for(const [id,r] of prepared)machineRecords.set(id,r);
     for (const r of rules) records.set(r.id,{phase:machinesRuntime.outputEquals(p,r.outputTag,values[r.outputTag].value,r.onValue)?'on':'off',pending:null,pendingSince:0,lastWriteAt:0,lastMessage:'已接管，等待条件',writes:0});
-    state='automatic';reason='按已启用的规则与步骤流程运行';session={startedAt:now(),signature:controlSignature(p),physicalTargets:actualTargets};
+    state='automatic';reason='按已启用的规则与步骤流程运行';session={startedAt:now(),signature:controlSignature(p),physicalTargets:actualTargets,authorizedBy};
     audit({event:'armed',ruleIds:rules.map(r=>r.id),machineIds:machines.map(m=>m.id),physicalTargets:actualTargets}); return status();
   }
   function takeover(tagId) { if (state === 'automatic' && (getProject().control?.rules.some(r=>r.enabled&&r.outputTag===tagId)||(getProject().control?.machines||[]).some(m=>m.enabled&&machinesRuntime.outputs(m).includes(tagId)))) pause('人工写入控制点位，自动控制已暂停'); }
   async function tick() {
     if (state !== 'automatic') return;
     const token=generation,p=getProject();
+    const stillAuthorized=()=>{if(generation!==token||state!=='automatic')return false;if(!permission()){pause('访问授权已撤销或过期，已停止后续自动写入');return false}return true};
+    if(!stillAuthorized())return;
     if (session.signature !== controlSignature(p)) {pause('控制相关配置已变化，请重新检查并启动');return;}
     for (const rule of p.control.rules.filter(r=>r.enabled)) {
-      if (generation!==token || state!=='automatic') return;
+      if (!stillAuthorized()) return;
       const evidenceErrors=citationProblems(p,rule,now());if(evidenceErrors.length){fault(evidenceErrors.join('；'),rule.id);return;}
       const values=readValues(), record=records.get(rule.id), refs=[rule.inputTag,rule.outputTag,...rule.guards.map(g=>g.tagId)];
       if (refs.some(id=>!fresh(values,id,rule.maxAgeMs))) {fault(`规则“${rule.name}”数据失效，停止自动写入；当前设备输出需人工确认`,rule.id);return;}
@@ -108,11 +111,11 @@ function createControl({getProject, readValues, writeValue, dir, now = Date.now}
         const result=await writeValue(rule.outputTag,value);
         if(!result?.verified)throw Error('写入未通过回读验证');
         audit({event:'write-verified',ruleId:rule.id,tagId:rule.outputTag,value:result.value});
-        if(generation!==token)return;
+        if(!stillAuthorized())return;
         record.phase=desired;record.pending=null;record.writes++;record.lastMessage=allowed?'阈值触发，写入与回读一致':'允许条件不满足，关闭写入已回读';
       } catch(e) {if(generation===token)fault(`规则“${rule.name}”写入失败：${e.message}；当前设备输出需人工确认`,rule.id);return;}
     }
-    for(const m of (p.control.machines||[]).filter(m=>m.enabled)){if(generation!==token||state!=='automatic')return;await machinesRuntime.tickMachine(m,machineRecords.get(m.id),{project:p,readValues,fresh,now,audit,writeValue,isCurrent:()=>generation===token&&state==='automatic',fault:(message,id)=>fault(message,undefined,id)});}
+    for(const m of (p.control.machines||[]).filter(m=>m.enabled)){if(generation!==token||state!=='automatic')return;await machinesRuntime.tickMachine(m,machineRecords.get(m.id),{project:p,readValues,fresh,now,audit,writeValue,isCurrent:stillAuthorized,fault:(message,id)=>fault(message,undefined,id)});}
 
   }
   return {arm,pause,takeover,tick,status,events,summary:()=>({state,reason})};

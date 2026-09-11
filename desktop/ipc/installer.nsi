@@ -8,7 +8,7 @@ Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
 !include "LogicLib.nsh"
-Name "FlexHMI 工控机版 ${VERSION} (${ARCH})"
+Name "FlexHMI 桌面版 ${VERSION} (${ARCH})"
 OutFile "${OUTPUT}"
 InstallDir "$LOCALAPPDATA\Programs\FlexHMI-IPC"
 InstallDirRegKey HKCU "Software\FlexHMI-IPC" "InstallDir"
@@ -16,14 +16,14 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 BrandingText "FlexHMI · 工业可视化，从此简单"
 VIProductVersion "${VERSION}.0"
-VIAddVersionKey /LANG=2052 "ProductName" "FlexHMI IPC"
-VIAddVersionKey /LANG=2052 "FileDescription" "FlexHMI 工控机版 Windows ${ARCH}"
+VIAddVersionKey /LANG=2052 "ProductName" "FlexHMI"
+VIAddVersionKey /LANG=2052 "FileDescription" "FlexHMI 桌面版 Windows ${ARCH}"
 VIAddVersionKey /LANG=2052 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=2052 "LegalCopyright" "FlexHMI contributors; engine copyright FUXA contributors"
 !define MUI_ICON "${ICON}"
 !define MUI_UNICON "${ICON}"
 !define MUI_ABORTWARNING
-!define MUI_WELCOMEPAGE_TEXT "FlexHMI 工控机版使用本机 Microsoft Edge 显示界面，内置离线编辑器和通讯运行环境。$\r$\n$\r$\n需要 64 位 Windows 10 / 11 和 Microsoft Edge。无需单独安装 Node.js。$\r$\n$\r$\n关闭画面后采集与已授权控制继续运行；使用开始菜单的停止服务入口结束本地服务。重启不会自动授权控制。$\r$\n$\r$\n未签名预览版。连接现场设备前，请验证通讯、联锁与控制参数。"
+!define MUI_WELCOMEPAGE_TEXT "FlexHMI 桌面版使用本机 Microsoft Edge 显示界面，内置离线编辑器和通讯运行环境。$\r$\n$\r$\n需要 64 位 Windows 10 / 11 和 Microsoft Edge。无需单独安装 Node.js。$\r$\n$\r$\n关闭画面后采集与已授权控制继续运行；使用开始菜单的停止服务入口结束本地服务。重启不会自动授权控制。$\r$\n$\r$\n未签名预览版。连接现场设备前，请验证通讯、联锁与控制参数。"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${LICENSEFILE}"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -34,6 +34,14 @@ VIAddVersionKey /LANG=2052 "LegalCopyright" "FlexHMI contributors; engine copyri
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "SimpChinese"
+!macro RemoveFlexShortcuts GROUP
+ Delete "$SMPROGRAMS\${GROUP}\编辑工程.lnk"
+ Delete "$SMPROGRAMS\${GROUP}\运行画面.lnk"
+ Delete "$SMPROGRAMS\${GROUP}\全屏运行.lnk"
+ Delete "$SMPROGRAMS\${GROUP}\停止服务.lnk"
+ Delete "$SMPROGRAMS\${GROUP}\卸载.lnk"
+ RMDir "$SMPROGRAMS\${GROUP}"
+!macroend
 Function .onInit
  ${IfNot} ${RunningX64}
   MessageBox MB_ICONSTOP "此版本需要 64 位 Windows。"
@@ -58,22 +66,24 @@ Section "FlexHMI" SecMain
   Abort
  ${EndIf}
  copy:
+ ; Remove only shortcuts created by older releases; preserve user data and install identity.
+ !insertmacro RemoveFlexShortcuts "FlexHMI 工控机版"
  SetOutPath "$INSTDIR"
  File /r "${PAYLOADGLOB}"
  WriteUninstaller "$INSTDIR\Uninstall.exe"
  WriteRegStr HKCU "Software\FlexHMI-IPC" "InstallDir" "$INSTDIR"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayName" "FlexHMI 工控机版 (${ARCH})"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayName" "FlexHMI 桌面版 (${ARCH})"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayVersion" "${VERSION}"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "DisplayIcon" "$INSTDIR\FlexHMI.exe"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "NoModify" 1
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC" "NoRepair" 1
- CreateDirectory "$SMPROGRAMS\FlexHMI 工控机版"
- CreateShortcut "$SMPROGRAMS\FlexHMI 工控机版\编辑工程.lnk" "$INSTDIR\FlexHMI.exe" "--editor"
- CreateShortcut "$SMPROGRAMS\FlexHMI 工控机版\运行画面.lnk" "$INSTDIR\FlexHMI.exe" "--runtime"
- CreateShortcut "$SMPROGRAMS\FlexHMI 工控机版\全屏运行.lnk" "$INSTDIR\FlexHMI.exe" "--kiosk"
- CreateShortcut "$SMPROGRAMS\FlexHMI 工控机版\停止服务.lnk" "$INSTDIR\FlexHMI.exe" "--stop"
- CreateShortcut "$SMPROGRAMS\FlexHMI 工控机版\卸载.lnk" "$INSTDIR\Uninstall.exe"
+ CreateDirectory "$SMPROGRAMS\FlexHMI 桌面版"
+ CreateShortcut "$SMPROGRAMS\FlexHMI 桌面版\编辑工程.lnk" "$INSTDIR\FlexHMI.exe" "--editor"
+ CreateShortcut "$SMPROGRAMS\FlexHMI 桌面版\运行画面.lnk" "$INSTDIR\FlexHMI.exe" "--runtime"
+ CreateShortcut "$SMPROGRAMS\FlexHMI 桌面版\全屏运行.lnk" "$INSTDIR\FlexHMI.exe" "--kiosk"
+ CreateShortcut "$SMPROGRAMS\FlexHMI 桌面版\停止服务.lnk" "$INSTDIR\FlexHMI.exe" "--stop"
+ CreateShortcut "$SMPROGRAMS\FlexHMI 桌面版\卸载.lnk" "$INSTDIR\Uninstall.exe"
  CreateShortcut "$DESKTOP\FlexHMI.lnk" "$INSTDIR\FlexHMI.exe"
 SectionEnd
 Section "Uninstall"
@@ -87,12 +97,8 @@ Section "Uninstall"
  Delete "$INSTDIR\Uninstall.exe"
  RMDir "$INSTDIR"
  Delete "$DESKTOP\FlexHMI.lnk"
- Delete "$SMPROGRAMS\FlexHMI 工控机版\编辑工程.lnk"
- Delete "$SMPROGRAMS\FlexHMI 工控机版\运行画面.lnk"
- Delete "$SMPROGRAMS\FlexHMI 工控机版\全屏运行.lnk"
- Delete "$SMPROGRAMS\FlexHMI 工控机版\停止服务.lnk"
- Delete "$SMPROGRAMS\FlexHMI 工控机版\卸载.lnk"
- RMDir "$SMPROGRAMS\FlexHMI 工控机版"
+ !insertmacro RemoveFlexShortcuts "FlexHMI 桌面版"
+ !insertmacro RemoveFlexShortcuts "FlexHMI 工控机版"
  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FlexHMI-IPC"
  DeleteRegKey HKCU "Software\FlexHMI-IPC"
 SectionEnd

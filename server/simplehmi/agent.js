@@ -89,7 +89,7 @@ async function applyOperations(before,request,validate,store,history){
  if(p.system?.mode==='industry-ai')impacts.push({code:'industry-review-required',message:'行业评估可引用本地资料和当前观测生成建议；模型质量与资料适用性须检查，工程计划应用不会自动启动控制'});
  return {project:p,changes:changes(before,p),impacts,diagnostics,fileConditions,pauseControl:lifecycle[0]?.op==='project.load'||!!revertsPlanId,...(revertsPlanId?{revertsPlanId}:{}),blocked:diagnostics.some(d=>d.code==='route-blocked')};
 }
-function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,validate,prepare=validate,dir}){
+function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,validate,prepare=validate,assertAccess=()=>{},authorization=()=>({protectedMode:false}),dir}){
  const projects=projectStore(dir,validate);
  const folder=path.join(dir,'agent');fs.mkdirSync(folder,{recursive:true});
  const planFile=id=>{need(idOk(id),'计划 ID 无效');return path.join(folder,id+'.json')};
@@ -100,7 +100,7 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
  const audit=e=>fs.appendFileSync(path.join(folder,'audit.jsonl'),JSON.stringify({at:new Date().toISOString(),...e})+'\n');
  const endpoint=fn=>async(req,res)=>{try{await fn(req,res)}catch(e){res.status(e.status||400).json({error:e.message,code:e.code||'invalid-plan',...(e.outcomeUnknown?{outcomeUnknown:true}:{})})}};
  const conflict=()=>{const e=Error('工程已被其他操作修改，请重新读取状态并预览计划');e.status=409;e.code='revision-conflict';throw e};
- router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',operations,modes,available:['project-snapshot','saved-project-lifecycle','engineering-history-revert','editor-save-history','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','state-machine-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','verified-industry-assessment','agent-scopes','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
+ router.get('/agent/capabilities',endpoint(async(req,res)=>res.json({apiVersion:'1',transport:'local-http',authorization:authorization(req),operations,modes,available:['project-snapshot','saved-project-lifecycle','engineering-history-revert','editor-save-history','server-agent-authorization','interrupted-plan-detection','plan-preview','dependency-repair','revision-check','idempotent-apply','audit-log','topology-layout','orthogonal-routing','model-generation','model-cancellation','operation-schema','hysteresis-control','state-machine-control','control-takeover','verified-control-writes','versioned-knowledge','cited-assessment','guarded-point-write',...(mcpConfiguration().installed?['mcp-stdio-adapter']:[])],pending:['verified-model-provider','verified-industry-assessment','crash-recovery'],maxOperations:500,physicalWritesViaPlans:false})));
  router.get('/agent/projects',endpoint(async(req,res)=>res.json(projects.inventory(getProject().id))));
  router.get('/agent/projects/:id',endpoint(async(req,res)=>res.json(projects.read(req.params.id,req.query.archived==='1'))));
  function listPlans(query={}){
@@ -124,33 +124,35 @@ function mountAgent(router,{getProject,getValues=()=>({}),activate,serial,valida
  mountAssessments(router,{dir,getProject,getValues,digest,previewPlan,audit});
  mountAi(router,{dir,getProject,getValues,digest,previewPlan,validatePlan:(before,request)=>applyOperations(before,request,validate,projects,history),audit});
  router.get('/agent/plans/:id',endpoint(async(req,res)=>res.json(JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8')))));
- async function execute(p){
+ async function execute(p,checkAccess=()=>{}){
+  checkAccess();
   const before=clone(getProject());p.status='applying';p.before=before;store(p);audit({event:'applying',planId:p.id,actor:p.actor});
-  try{if(p.fileEffect)projects.execute(p.fileEffect);else await activate(p.project,{pauseControl:p.pauseControl})}
+  try{if(p.fileEffect)projects.execute(p.fileEffect);else await activate(p.project,{pauseControl:p.pauseControl,checkAccess})}
   catch(e){p.status='failed';p.error=e.message;try{if(!p.fileEffect)await activate(before);p.restored=p.fileEffect?!projects.completed(p.fileEffect):true}catch(restore){p.restored=false;p.restoreError=restore.message}store(p);audit({event:'failed',planId:p.id,error:p.error,restored:p.restored});throw e}
   p.status='applied';p.resultRevision=digest(getProject());
-  try{store(p);audit({event:'applied',planId:p.id,actor:p.actor,revision:p.resultRevision,...(p.revertsPlanId?{revertsPlanId:p.revertsPlanId}:{})})}catch(e){e.outcomeUnknown=true;e.code='journal-write-failed';throw e}
+  try{store(p);audit({event:'applied',planId:p.id,actor:p.appliedBy||p.actor,revision:p.resultRevision,...(p.revertsPlanId?{revertsPlanId:p.revertsPlanId}:{})})}catch(e){e.outcomeUnknown=true;e.code='journal-write-failed';throw e}
   return {id:p.id,status:p.status,revision:p.resultRevision,project:getProject()};
  }
- async function saveEditor(raw,{expectedRevision,source='editor',pauseControl=false}={}){
+ async function saveEditor(raw,{expectedRevision,source='editor',pauseControl=false,checkAccess=()=>{}}={}){
   const before=clone(getProject()),revision=digest(before);if(expectedRevision&&expectedRevision!==revision)conflict();
-  const project=await prepare(raw),diff=changes(before,project);
+  checkAccess();const project=await prepare(raw);checkAccess();const diff=changes(before,project);
   if(digest(project)===revision&&!pauseControl)return {project:getProject(),historyId:null};
   const impacts=[];if(pauseControl||JSON.stringify([before.devices,before.control,before.system,before.simulation,before.knowledge,before.id])!==JSON.stringify([project.devices,project.control,project.system,project.simulation,project.knowledge,project.id]))impacts.push({code:'control-paused',message:'工程控制或通信配置变化，自动控制保持暂停；保存不会启动设备'});
   const labels={component:'组件',page:'画面',connection:'管线',device:'设备',tag:'变量',rule:'规则',machine:'步骤流程',knowledge:'知识',asset:'图形',project:'工程'},first=diff[0],kind=first?.entity.split('/')[1],name=first?.after?.label||first?.after?.name||first?.before?.label||first?.before?.name;
   const summary=source==='load'?'打开工程：'+project.name:'编辑保存：'+(name||labels[kind]||project.name)+(diff.length>1?' 等 '+diff.length+' 项':'');
   const p={id:'plan_'+crypto.randomUUID().replaceAll('-',''),createdAt:Date.now(),expectedRevision:revision,actor:source==='load'?'project-loader':'editor-save',source,summary:summary.slice(0,500),status:'applying',project,changes:diff,impacts,diagnostics:[],pauseControl,blocked:false};
-  const result=await execute(p);return {project:result.project,historyId:p.id};
+  const result=await execute(p,checkAccess);return {project:result.project,historyId:p.id};
  }
  router.post('/agent/plans/:id/apply',endpoint(async(req,res)=>res.json(await serial(async()=>{
-  const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));
+  assertAccess(req);const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));
   if(p.status==='applied')return {id:p.id,status:p.status,revision:p.resultRevision,replayed:true};
   need(p.status==='preview','计划不处于可应用状态');need(p.expiresAt>Date.now(),'计划已过期，请重新预览');need(!p.blocked,'计划有未解决的布线问题');if(p.expectedRevision!==digest(getProject()))conflict();
+  p.appliedBy=req.flexAuth?.id||p.actor;
   projects.check(p.fileConditions);
   assertAssessmentFresh(p.assessment,getProject(),getValues());
-  return execute(p);
+  return execute(p,()=>assertAccess(req));
  }))));
- router.post('/agent/plans/:id/cancel',endpoint(async(req,res)=>res.json(await serial(async()=>{const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));need(p.status==='preview','只有未应用计划可以取消');p.status='cancelled';store(p);audit({event:'cancelled',planId:p.id});return {id:p.id,status:p.status}}))));
+ router.post('/agent/plans/:id/cancel',endpoint(async(req,res)=>res.json(await serial(async()=>{assertAccess(req);const p=JSON.parse(fs.readFileSync(planFile(req.params.id),'utf8'));need(p.status==='preview','只有未应用计划可以取消');p.status='cancelled';store(p);audit({event:'cancelled',planId:p.id});return {id:p.id,status:p.status}}))));
  async function recover(){
   for(const name of scanPlans()){
    let p;try{p=readPlan(name)}catch(e){audit({event:'plan-record-unreadable',file:name,error:e.message});continue}if(p.status!=='applying')continue;
