@@ -70,3 +70,8 @@ test('model gets actionable dangling-reference feedback and must repair the bind
  const j=f.service.start(f.request());await f.service.wait(j.id);assert.equal(calls,2);assert.equal(f.service.get(j.id).status,'ready');assert.equal(f.plans[0].project.pages[0].components[0].tagId,'measured_value');assert.ok(!f.plans[0].impacts.some(i=>i.code==='binding-cleared'));assert.equal(f.getProject().id,'ai_test');
  const invalid=fixture(t,async()=>JSON.stringify(makePlan('source_device'))),bad=invalid.service.start(invalid.request());await invalid.service.wait(bad.id);assert.equal(invalid.service.get(bad.id).status,'failed');assert.equal(invalid.plans.length,0);
 });
+test('model plan schema exposes explicit simulation removal and rejects unsupported names',()=>{
+ const Ajv=require('../server/node_modules/ajv'),{planSchema}=require('../server/simplehmi/ai-contract'),check=new Ajv({strict:false}).compile(planSchema);
+ for(const simulation of [null,'water-transfer','waste-to-energy'])assert.equal(check({summary:'切换模型',operations:[{op:'project.configure',simulation}]}),true,JSON.stringify(check.errors));
+ assert.equal(check({summary:'错误模型',operations:[{op:'project.configure',simulation:'invented'}]}),false);
+});

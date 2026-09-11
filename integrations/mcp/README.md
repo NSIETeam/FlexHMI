@@ -72,3 +72,9 @@
 ## 评估记录
 
 `flexhmi_assessments` 检索内置 AI 和外部 Agent 保存的评估，包含无工程改动的报告。支持 `projectId`、`source`（model / external）、`q`、`limit`（1–100）、`cursor`；响应为 `records`、`nextCursor`、`unreadable`。使用返回的 nextCursor 翻页，为 null 时结束；再用 `flexhmi_assessment` 打开详情。有计划的评估应读取其最新 plan 状态再考虑应用，历史观测不是当前值。
+
+### 切换过程模型与真实设备
+
+`flexhmi_preview` 的 `project.configure` 现在支持 `simulation`：`water-transfer`、`waste-to-energy` 或 `null`。`null` 移除模型，省略字段保留现状。切换模型与 `device.upsert` / `tag.upsert` 可放在同一计划中，按最终工程统一校验；组件绑定的变量 ID 可以保留。未提供实际点表时不要推测现场地址和控制含义。
+
+预览会列出模型切换、通信重启、模拟状态/历史缓存重置以及自动控制暂停等影响。移除模型本身不会把模拟设备变成真实设备；保留的模拟点将恢复独立信号行为。应用设备配置会尝试建立通信，但不代表连接成功，也不会授权物理写入或启动自动控制。读取设备状态和点位质量后，再按原有显式授权流程操作。可再次设置原模型并将相应点位设备恢复为 `sim`，从固定演示初始状态重新开始。

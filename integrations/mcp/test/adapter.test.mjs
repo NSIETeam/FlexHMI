@@ -28,6 +28,13 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   client=await connect();const listed=await client.listTools();assert.equal(listed.tools.length,24);assert.equal((await client.listResources()).resources.length,4);
   const guide=await client.readResource({uri:'flexhmi://guide'});assert.match(guide.contents[0].text,/expectedRevision/);
   const prompt=await client.getPrompt({name:'build_system',arguments:{requirement:'双水箱供水画面',mode:'visualization'}});assert.match(prompt.messages[0].content.text,/双水箱/);
+  const modelBefore=await call('flexhmi_state');
+  const modelOff=await call('flexhmi_preview',{expectedRevision:modelBefore.revision,summary:'移除过程模型',operations:[{op:'project.configure',simulation:null}]});
+  assert.equal((await call('flexhmi_state')).project.simulation,'water-transfer');
+  for(const code of ['simulation-model-changed','runtime-restart','control-paused'])assert.ok(modelOff.impacts.some(i=>i.code===code));
+  await call('flexhmi_apply',{planId:modelOff.id});assert.equal((await call('flexhmi_state')).project.simulation,undefined);
+  const modelOn=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'恢复过程模型',operations:[{op:'project.configure',simulation:'water-transfer'}]});
+  await call('flexhmi_apply',{planId:modelOn.id});assert.equal((await call('flexhmi_state')).project.simulation,'water-transfer');
   const before=await call('flexhmi_state');
   const badBinding=await client.callTool({name:'flexhmi_preview',arguments:{expectedRevision:before.revision,summary:'拒绝把设备 ID 当变量 ID',operations:[{op:'component.upsert',pageId:'overview',component:{id:'tank_1',tagId:'supply'}}]}});
   assert.equal(badBinding.isError,true);assert.equal(badBinding.structuredContent.code,'invalid-reference');assert.match(badBinding.structuredContent.error,/tank_1\/tagId.*supply/);assert.equal((await call('flexhmi_state')).revision,before.revision);

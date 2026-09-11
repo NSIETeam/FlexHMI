@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {mountAi}=require('./ai');
+const {controlSignature}=require('./control');
 const {mcpConfiguration}=require('./mcp-config');
 const {projectStore}=require('./project-store');
 const {references:machineReferences}=require('./state-machine');
@@ -75,7 +76,7 @@ async function applyOperations(before,request,validate,store,history){
      {code:'physical-state-not-reverted',message:'仅恢复工程配置，不恢复历史实时值、设备输出或生产过程；已经发出的设备指令不会撤销'});
     break;
    }
-   case 'project.configure':if(op.name!==undefined)p.name=op.name;if(op.mode!==undefined){need(modes.includes(op.mode),'系统模式无效');p.system={...p.system,mode:op.mode}}break;
+   case 'project.configure':if(op.name!==undefined)p.name=op.name;if(op.mode!==undefined){need(modes.includes(op.mode),'系统模式无效');p.system={...p.system,mode:op.mode}}if(op.simulation!==undefined){need(op.simulation===null||['water-transfer','waste-to-energy'].includes(op.simulation),'过程模拟模型无效');if(op.simulation===null)delete p.simulation;else p.simulation=op.simulation}break;
    case 'device.upsert':upsert(p.devices,op.device);break;
    case 'device.delete':p.devices=remove(p.devices,op.id);break;
    case 'tag.upsert':upsert(dev().tags,op.tag);break;
@@ -109,10 +110,11 @@ async function applyOperations(before,request,validate,store,history){
   if(to==='visualization')impacts.push({code:'automatic-control-unavailable',message:'数据可视化类型下不能启动自动控制；已保存的规则和步骤流程可在切回控制类型后检查并启用'});
  }
  if(JSON.stringify([p.id,p.devices,p.simulation])!==JSON.stringify([before.id,before.devices,before.simulation]))impacts.push({code:'runtime-restart',message:'设备配置变化将重启 FUXA 通信；当前历史缓存和模拟手动值会重置'});
+ if(p.simulation!==before.simulation)impacts.push({code:'simulation-model-changed',from:before.simulation??null,to:p.simulation??null,message:p.simulation?'启用内置过程模型，模拟状态将从固定初始条件重新开始':'已移除过程模型；保留的模拟点不再具备工艺联动，真实设备点须核对地址、倍率和操作权限'});
  if(p.devices.some(d=>d.protocol==='sim')&&!['water-transfer','waste-to-energy'].includes(p.simulation))impacts.push({code:'independent-simulation-signals',message:'当前模拟变量是独立信号，未建立物料守恒或设备联动关系，不能用来验证工艺行为'});
  for(const pg of p.pages)for(const c of pg.components)if(c.kind==='alarm'&&(c.threshold==null||!c.tagId))impacts.push({code:'alarm-unconfigured',entity:c.id,pageId:pg.id,message:'报警组件“'+(c.label||c.id)+'”'+(c.threshold==null?'缺少报警上限':'')+(c.threshold==null&&!c.tagId?'，':'')+(!c.tagId?'未绑定监测变量':'')+'；画面将显示未配置，不能判断报警'});
  if(p.id!==before.id)impacts.push({code:'project-switch',message:'当前运行工程将切换；原工程文件保留'});
- if(JSON.stringify([p.control,p.system?.mode,p.knowledge])!==JSON.stringify([before.control,before.system?.mode,before.knowledge]))impacts.push({code:'control-paused',message:'控制规则、模式或知识资料变化会暂停自动控制；应用计划不会自动启动，须在控制面板重新检查并启动'});
+ if(controlSignature(p)!==controlSignature(before))impacts.push({code:'control-paused',message:'设备、模拟模型、控制规则、模式或知识资料变化会暂停自动控制；应用计划不会自动启动，须在控制面板重新检查并启动'});
  if(p.system?.mode==='industry-ai')impacts.push({code:'industry-review-required',message:'行业评估可引用本地资料和当前观测生成建议；模型质量与资料适用性须检查，工程计划应用不会自动启动控制'});
  return {project:p,changes:changes(before,p),impacts,diagnostics,fileConditions,pauseControl:lifecycle[0]?.op==='project.load'||!!revertsPlanId,...(revertsPlanId?{revertsPlanId}:{}),blocked:diagnostics.some(d=>d.code==='route-blocked')};
 }
