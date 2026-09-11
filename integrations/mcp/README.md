@@ -1,6 +1,6 @@
 # FlexHMI 外部 Agent 接入
 
-这是可选的本机 MCP stdio 扩展，使用官方 TypeScript SDK。需要 Node.js 22 或更高版本。Windows 0.4.0 与 macOS 0.4.1 桌面包已内置；0.3.0 IPC 旧草稿包不包含。最新源码新增的历史恢复、步骤流程和访问保护仍需后续版本发布。
+这是可选的本机 MCP stdio 扩展，使用官方 TypeScript SDK。需要 Node.js 22 或更高版本。Windows 0.4.0 与 macOS 0.4.1 桌面包已内置；0.3.0 IPC 旧草稿包不包含。0.4.2 四平台桌面包已包含历史恢复、步骤流程和访问保护，并通过安装后的 MCP 服务端权限测试。
 
 ## 启动与连接
 

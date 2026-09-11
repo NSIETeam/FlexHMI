@@ -1,0 +1,76 @@
+{
+  "version": "0.4.2",
+  "sourceCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf",
+  "packages": [
+    {
+      "platform": "macos",
+      "arch": "arm64",
+      "file": "FlexHMI-0.4.2-macOS-arm64.dmg",
+      "bytes": 226216727,
+      "sha256": "766c1b034edcda949c7974eacbe302ecb986a8d976b614f88574bf926d5ded8e",
+      "sourceCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34548707781",
+      "qualificationCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf"
+    },
+    {
+      "platform": "macos",
+      "arch": "x64",
+      "file": "FlexHMI-0.4.2-macOS-x64.dmg",
+      "bytes": 191103536,
+      "sha256": "92c423d2b905e3c2d9b0c1a3cba3c57a7b5480ab7ceab26c263ac501b87ba4f5",
+      "sourceCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34548707781",
+      "qualificationCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf"
+    },
+    {
+      "platform": "windows",
+      "arch": "arm64",
+      "file": "FlexHMI-0.4.2-Windows-arm64-Setup.exe",
+      "bytes": 56251730,
+      "sha256": "b2e389e1ca2baa3bc544f328eb5eeaeff8442d05974ba948ac26c7a08980e1dc",
+      "sourceCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34549694431",
+      "qualificationCommit": "61d8bde41e5c82f0a8a3f7ae10f4d615f70aa963"
+    },
+    {
+      "platform": "windows",
+      "arch": "x64",
+      "file": "FlexHMI-0.4.2-Windows-x64-Setup.exe",
+      "bytes": 60191400,
+      "sha256": "984e827fd6589a3714b2fa449219f666a04dcd17ff2664a2d26c79342cbb80a7",
+      "sourceCommit": "c72b97797d9884c7017d21839ead6c6ad19d1edf",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34549694431",
+      "qualificationCommit": "61d8bde41e5c82f0a8a3f7ae10f4d615f70aa963"
+    }
+  ],
+  "testedEnvironments": [
+    "Windows Server 2025 x64",
+    "Windows 11 ARM64",
+    "macOS 15.7.9 Apple Silicon",
+    "macOS 15.7.9 Intel"
+  ],
+  "coverage": [
+    "native installed runtime and modules",
+    "editor/runtime rendering",
+    "conserving simulation",
+    "project save/reload",
+    "editor history diff and restore",
+    "three-step control with two verified writes",
+    "MCP server authorization",
+    "revocation pauses control",
+    "protected restart and retained history",
+    "upgrade and uninstall preserve project data"
+  ],
+  "limitations": [
+    "Windows publisher signing not provided",
+    "macOS Developer ID signing and notarization not provided",
+    "Windows 10, Windows 11 x64 and macOS 13/14 not directly tested",
+    "Physical PLC and real model provider not tested",
+    "Multi-user and per-project ACL not implemented",
+    "Production industry knowledge quality not verified"
+  ]
+}
