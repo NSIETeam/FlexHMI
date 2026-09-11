@@ -55,10 +55,14 @@ module.exports=function mount(app,runtime,settings,base=''){
  const readTag=(d,t)=>runtime.devices.getDevicesValues()[`sh_${active.id}_${d.id}`]?.[`sh_${active.id}_${t.id}`];
  const file=id=>path.join(dir,id+'.json');
  function persist(p){const tmp=file(p.id)+'.tmp';fs.writeFileSync(tmp,JSON.stringify(p,null,2));fs.renameSync(tmp,file(p.id));const marker=path.join(dir,'active.txt');fs.writeFileSync(marker+'.tmp',p.id);fs.renameSync(marker+'.tmp',marker);}
- async function activate(p,{pauseControl=false}={}){
+ async function prepare(p){
   p=validate(p);
   validateKnowledgeRevision(active,p);
   if(p.pages.some(pg=>pg.connections?.length)){const {routePage}=await import('../../simplehmi/topology.mjs');p.pages=p.pages.map(pg=>pg.connections?.length?routePage(pg).page:pg)}
+  return p;
+ }
+ async function activate(p,{pauseControl=false}={}){
+  p=await prepare(p);
   if(pauseControl||controlSignature(p)!==controlSignature(active))control.pause('工程控制配置变化，自动控制已暂停；请检查后重新启动');
   const next=JSON.stringify([p.id,p.devices,p.simulation]);
   if(next!==fingerprint){
@@ -84,8 +88,8 @@ module.exports=function mount(app,runtime,settings,base=''){
  router.get('/status',route(async(req,res)=>res.json({ready,instance:process.env.SIMPLEHMI_INSTANCE||null,engine:'FUXA 1.3.4',mode:'local',activeProject:active?.id})));
  router.get('/projects',route(async(req,res)=>res.json(fs.readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>{const p=JSON.parse(fs.readFileSync(path.join(dir,f)));return {id:p.id,name:p.name,updatedAt:fs.statSync(path.join(dir,f)).mtime.toISOString()}}))));
  router.get('/project',route(async(req,res)=>res.set('X-Project-Revision',digest(active)).json(active)));
- router.post('/project',route(async(req,res)=>{const result=await serial(async()=>{if(req.headers['if-match']&&req.headers['if-match']!==digest(active)){res.status(409);throw Error('工程已被其他 Agent 或窗口修改，请刷新后重新编辑')}return activate(req.body)});res.set('X-Project-Revision',digest(result)).json(result)}));
- router.post('/load/:id',route(async(req,res)=>{if(!safeId(req.params.id))throw Error('工程 ID 无效');const result=await serial(()=>activate(JSON.parse(fs.readFileSync(file(req.params.id)))));res.set('X-Project-Revision',digest(result)).json(result)}));
+ router.post('/project',route(async(req,res)=>{const result=await serial(()=>agentApi.saveEditor(req.body,{expectedRevision:req.headers['if-match']}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
+ router.post('/load/:id',route(async(req,res)=>{if(!safeId(req.params.id))throw Error('工程 ID 无效');const result=await serial(()=>agentApi.saveEditor(JSON.parse(fs.readFileSync(file(req.params.id))),{expectedRevision:req.headers['if-match'],source:'load',pauseControl:true}));res.set('X-Project-Revision',digest(result.project)).set('X-History-Id',result.historyId||'').json(result.project)}));
  function snapshotValues(){
   const values={},devices={};
   for(const d of active.devices){let good=0;for(const t of d.tags){const raw=readTag(d,t);const ts=raw?.ts||raw?.timestamp||0;const value=raw?.value;const fresh=value!=null&&ts>0&&Date.now()-ts<Math.max(d.polling*3,3500);values[t.id]={value:fresh?value:null,lastValue:value,ts,quality:fresh?'good':'stale'};if(fresh)good++;}devices[d.id]={connected:good>0,source:d.protocol};}
@@ -141,7 +145,7 @@ const d=active.devices.find(d=>d.tags.some(t=>t.id===tagId)),t=d?.tags.find(t=>t
  }));
  router.get('/agent/mcp-config',route(async(req,res)=>res.json(mcpConfiguration({port:req.socket.localPort,base,workDir:settings.workDir}))));
  router.get('/knowledge',route(async(req,res)=>res.json({entries:searchKnowledge(active,req.query.q||''),revision:digest(active)})));
- const agentApi=mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,serial,validate,dir});
+ const agentApi=mountAgent(router,{getProject:()=>active,getValues:()=>snapshotValues().values,activate,prepare,serial,validate,dir});
  router.use((err,req,res,next)=>res.status(400).json({error:err.message}));
  app.use(base+'/simplehmi/api',router);
  app.use(base+'/simplehmi',express.static(staticDir));

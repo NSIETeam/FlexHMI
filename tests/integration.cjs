@@ -18,6 +18,12 @@ test('SimpleHMI real FUXA integration', {timeout:90000}, async t=>{
   assert.ok((await request('/agent/audit')).data.some(e=>e.event==='point-write-verified'&&e.tagId==='coil'));
  });
  await t.test('layout saves and reloads without stopping devices',async()=>{let p=(await request('/project')).data;p.pages[0].components[0].x=160;p.pages[0].components[0].label='已修改温度';await request('/project',p);assert.equal((await request('/project')).data.pages[0].components[0].x,160);assert.ok((await request('/projects')).data.some(x=>x.id==='test'));});
+ await t.test('ordinary HTTP saves journal normalized changes and a repeated save preserves live simulation',async()=>{
+  const before=(await request('/agent/state')).data,next=structuredClone(before.project);next.pages[0].components[0].label='普通保存历史验收';
+  const response=await fetch('http://127.0.0.1:1882/simplehmi/api/project',{method:'POST',headers:{'Content-Type':'application/json','If-Match':before.revision},body:JSON.stringify(next)});assert.equal(response.status,200);const id=response.headers.get('X-History-Id');assert.ok(id);const saved=await response.json();const record=(await request('/agent/plans/'+id)).data;assert.equal(record.source,'editor');assert.equal(record.before.pages[0].components[0].label,before.project.pages[0].components[0].label);assert.deepEqual(record.project,saved);
+  const count=(await request('/agent/plans?source=editor')).data.length;await request('/project',saved);assert.equal((await request('/agent/plans?source=editor')).data.length,count);assert.equal((await request('/values')).data.values.coil.quality,'good');
+  const plan=(await request('/agent/plans',{expectedRevision:(await request('/agent/state')).data.revision,operations:[{op:'project.revert',planId:id}]})).data;await request('/agent/plans/'+plan.id+'/apply',{});assert.equal((await request('/project')).data.pages[0].components[0].label,before.project.pages[0].components[0].label);assert.equal((await request('/control/status')).data.state,'manual');
+ });
  await t.test('invalid and read-only requests fail honestly',async()=>{assert.equal((await request('/project',{schemaVersion:99},false)).status,400);const p=project();p.devices[0].tags[0].writable=false;await request('/project',p);assert.equal((await request('/write',{tagId:'temp',value:20},false)).status,400)});
  slave=spawn(process.execPath,[path.join(root,'scripts/modbus-simulator.cjs')],{cwd:temp,env:{...process.env,MODBUS_PORT:'1503'},stdio:['ignore','pipe','pipe']});await sleep(700);
  await t.test('connection probe performs a real Modbus read',async()=>{const p=project('ModbusTCP');const {tags,...device}=p.devices[0];const probe=(await request('/test',device)).data;assert.equal(probe.read,236);assert.equal(probe.ok,true)});
@@ -98,6 +104,9 @@ test('SimpleHMI real FUXA integration', {timeout:90000}, async t=>{
   await request('/control/arm',{expectedRevision:state.revision});
   await until(async()=> (await request('/control/status')).data.rules[0]?.writes>=2,16000);
   let v=(await request('/values')).data.values;assert.equal(Number(v.pump_command.value),0);assert.ok(v.destination_level.value>=32);assert.equal(v.total_volume.value,4.15);
+  const loadRevision=(await request('/agent/state')).data.revision;
+  const staleLoad=await fetch('http://127.0.0.1:1882/simplehmi/api/load/water_control_test',{method:'POST',headers:{'Content-Type':'application/json','If-Match':'stale'},body:'{}'});assert.equal(staleLoad.status,409);assert.equal((await request('/control/status')).data.state,'automatic');
+  const loaded=await fetch('http://127.0.0.1:1882/simplehmi/api/load/water_control_test',{method:'POST',headers:{'Content-Type':'application/json','If-Match':loadRevision},body:'{}'});assert.equal(loaded.status,200);assert.ok(loaded.headers.get('X-History-Id'));assert.equal((await request('/agent/plans/'+loaded.headers.get('X-History-Id'))).data.source,'load');assert.equal((await request('/control/status')).data.state,'manual');await request('/control/arm',{expectedRevision:(await request('/agent/state')).data.revision});
   await request('/write',{tagId:'pump_command',value:1});assert.equal((await request('/control/status')).data.state,'manual');await sleep(1500);assert.equal(Number((await request('/values')).data.values.pump_command.value),1);
   await stop(server);start();await until(async()=> (await request('/status')).data.ready);assert.equal((await request('/control/status')).data.state,'manual');assert.equal((await request('/project')).data.control.rules.length,1);
  });

@@ -181,7 +181,7 @@ let serverRevision = null;
 async function api(url, body) {
   const r = await fetch("./api" + url, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "Content-Type": "application/json", ...(url === "/project" && body && serverRevision ? {"If-Match":serverRevision} : {}) },
+    headers: { "Content-Type": "application/json", ...((url === "/project" || url.startsWith("/load/")) && body && serverRevision ? {"If-Match":serverRevision} : {}) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const data = await r.json();

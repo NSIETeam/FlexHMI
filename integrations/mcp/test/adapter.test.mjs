@@ -60,6 +60,8 @@ test('official MCP stdio client engineers and operates a real FUXA simulation', 
   assert.equal((await call('flexhmi_project',{id:archived.archiveId,archived:true})).project.id,copy.id);
   const restore=await call('flexhmi_preview',{expectedRevision:(await call('flexhmi_state')).revision,summary:'恢复备用工程',operations:[{op:'project.restore',archiveId:archived.archiveId,expectedSavedRevision:archived.revision}]});await call('flexhmi_apply',{planId:restore.id});assert.equal((await call('flexhmi_state')).project.id,original.id);assert.ok((await call('flexhmi_projects')).projects.some(p=>p.id===copy.id));assert.ok((await call('flexhmi_plans')).data.some(p=>p.id===restore.id&&p.status==='applied'));
 
+  const emptyEditorHistory=await call('flexhmi_plans',{source:'editor',projectId:original.id,limit:1});assert.ok(Array.isArray(emptyEditorHistory.data));
+  const firstHistory=await call('flexhmi_plans',{source:'agent',projectId:original.id,limit:2});assert.equal(firstHistory.data.length,2);const nextHistory=await call('flexhmi_plans',{source:'agent',projectId:original.id,limit:2,cursor:firstHistory.data.at(-1).id});assert.equal(nextHistory.data.length,2);assert.ok(nextHistory.data.every(p=>!firstHistory.data.some(f=>f.id===p.id)));
   const flowSource=await call('flexhmi_state'),output=await until(async()=>{const v=(await call('flexhmi_values')).values.pump_command;return v.quality==='good'&&v});
   await call('flexhmi_write_point',{expectedRevision:flowSource.revision,deviceId:'supply',tagId:'pump_command',expectedValue:output.value,observedAt:output.ts,value:0,outputMin:0,outputMax:1});
   const machine={id:'mcp_steps',name:'Agent 顺序控制',enabled:true,initialState:'idle',maxAgeMs:3500,minIntervalMs:1000,guards:[],states:[

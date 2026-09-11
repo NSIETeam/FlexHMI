@@ -61,3 +61,6 @@
 步骤流程通过 `flexhmi_preview` 中的 `machine.upsert {machine}` / `machine.delete {id}` 操作，再经 `flexhmi_apply` 保存；工具数量仍为 23。完整模型见 [控制文档](../../docs/simplehmi/ai/CONTROL.md)。`flexhmi_control_status.machines` 返回当前步骤、跳转次数和已验证写入次数。保存不启动；`flexhmi_control_arm` 要求初始输出一致、全部引用新鲜、允许条件和依据有效，真实输出的会话许可涵盖所有步骤。`flexhmi_control_pause` 停止后续动作。多个输出逐项写入，失败时已发出的动作不会回滚。
 
 官方 MCP 客户端验收包含：生成待机 → 供水 → 停机配置、预览不改变工程、应用保持手动、显式启动、两次模拟输出回读、终点与人工接管。它验证真实 MCP/FUXA 协议链路，不代表真实语言模型生成质量。
+
+
+`flexhmi_plans` 可读取普通编辑保存记录（source=editor）、AI/Agent 计划（agent）和直接打开工程（load）；这些是操作通道，尚非已认证身份。参数 `projectId`、`source`、`limit`、`cursor` 支持筛选和历史翻页，使用上一页最后一条 ID 作为下一页 cursor，返回少于 limit 项即结束。响应仍为 `data` 数组，工具数量保持 23。编辑记录读取与恢复仍使用 `flexhmi_plan` 和 `project.revert`。
