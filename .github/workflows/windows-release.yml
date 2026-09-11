@@ -5,7 +5,7 @@ on:
       release_tag:
         description: Draft release containing source payload ZIPs and payload manifest
         required: true
-        default: v0.4.2-preview
+        default: v0.4.3-preview
         type: string
 permissions:
   contents: read
