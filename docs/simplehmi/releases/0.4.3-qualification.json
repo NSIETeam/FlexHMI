@@ -1,0 +1,130 @@
+{
+  "version": "0.4.3",
+  "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+  "packages": [
+    {
+      "platform": "macos",
+      "arch": "arm64",
+      "file": "FlexHMI-0.4.3-macOS-arm64.dmg",
+      "bytes": 223858891,
+      "sha256": "bf36e82591c2649e4731e68e9806a4fd13587a821485df83a7ea46f4b9c49fbc",
+      "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34554607448",
+      "qualificationCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "erratum": {
+        "field": "mcpToolCount",
+        "reported": 23,
+        "assertedInSuccessfulInstalledTest": 24,
+        "kind": "stale hardcoded report field",
+        "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+        "testScript": "scripts/macos/installed-smoke.cjs",
+        "testScriptSHA256": "92537a5ff58573d198a868f3dfddb4ea4e35cd498c6b54ff1d5dca296a75d87f",
+        "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34554607448",
+        "originalArtifactPreserved": true,
+        "explanation": "The successful installed test asserts 24 tools before writing this report. The report independently hardcoded 23. Original CI JSON is retained without edits."
+      }
+    },
+    {
+      "platform": "macos",
+      "arch": "x64",
+      "file": "FlexHMI-0.4.3-macOS-x64.dmg",
+      "bytes": 189765420,
+      "sha256": "5837a9e40502e5d300aefd329955eb2fb218cdf2dd9afd2afc80bda2d34d7447",
+      "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34554607448",
+      "qualificationCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "erratum": {
+        "field": "mcpToolCount",
+        "reported": 23,
+        "assertedInSuccessfulInstalledTest": 24,
+        "kind": "stale hardcoded report field",
+        "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+        "testScript": "scripts/macos/installed-smoke.cjs",
+        "testScriptSHA256": "92537a5ff58573d198a868f3dfddb4ea4e35cd498c6b54ff1d5dca296a75d87f",
+        "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34554607448",
+        "originalArtifactPreserved": true,
+        "explanation": "The successful installed test asserts 24 tools before writing this report. The report independently hardcoded 23. Original CI JSON is retained without edits."
+      }
+    },
+    {
+      "platform": "windows",
+      "arch": "arm64",
+      "file": "FlexHMI-0.4.3-Windows-arm64-Setup.exe",
+      "bytes": 56590301,
+      "sha256": "0948cb26de4f15b481897e46b56d5adf46d9430af913c16072697b6ffcc0d40b",
+      "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34555194008",
+      "qualificationCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "erratum": {
+        "field": "mcpToolCount",
+        "reported": 23,
+        "assertedInSuccessfulInstalledTest": 24,
+        "kind": "stale hardcoded report field",
+        "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+        "testScript": "scripts/windows/installed-smoke.cjs",
+        "testScriptSHA256": "adfe12e7ced6bb31a835ced2e29072fe95a4e3d1e6a3818fdc10c8afb428fdfb",
+        "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34555194008",
+        "originalArtifactPreserved": true,
+        "explanation": "The successful installed test asserts 24 tools before writing this report. The report independently hardcoded 23. Original CI JSON is retained without edits."
+      }
+    },
+    {
+      "platform": "windows",
+      "arch": "x64",
+      "file": "FlexHMI-0.4.3-Windows-x64-Setup.exe",
+      "bytes": 60538695,
+      "sha256": "2d5d857e12efb4a9fb98cac02d72fda9b5334d9ce92f51ab7b26080ea902f7d8",
+      "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "qualified": true,
+      "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34555194008",
+      "qualificationCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+      "erratum": {
+        "field": "mcpToolCount",
+        "reported": 23,
+        "assertedInSuccessfulInstalledTest": 24,
+        "kind": "stale hardcoded report field",
+        "sourceCommit": "5569c788d9ba200ddc58d50933e054170325b7ab",
+        "testScript": "scripts/windows/installed-smoke.cjs",
+        "testScriptSHA256": "adfe12e7ced6bb31a835ced2e29072fe95a4e3d1e6a3818fdc10c8afb428fdfb",
+        "qualificationUrl": "https://github.com/NSIETeam/FlexHMI/actions/runs/34555194008",
+        "originalArtifactPreserved": true,
+        "explanation": "The successful installed test asserts 24 tools before writing this report. The report independently hardcoded 23. Original CI JSON is retained without edits."
+      }
+    }
+  ],
+  "testedEnvironments": [
+    "Windows Server 2025 x64",
+    "Windows 11 ARM64",
+    "macOS 15.7.9 Apple Silicon",
+    "macOS 15.7.9 Intel"
+  ],
+  "coverage": [
+    "native installed runtime and modules",
+    "editor/runtime rendering",
+    "conserving simulation",
+    "project save/reload",
+    "editor history diff and restore",
+    "three-step control with two verified writes",
+    "MCP server authorization",
+    "revocation pauses control",
+    "protected restart and retained history",
+    "assessment report persistence and search",
+    "model-generated step evidence",
+    "source expiration blocks remaining outputs",
+    "upgrade and uninstall preserve project data"
+  ],
+  "evidenceNotes": [
+    "Original CI reports contain a stale hardcoded mcpToolCount of 23; the successful installed test asserts 24. Original artifacts and matching source scripts are preserved alongside per-package report-erratum.json."
+  ],
+  "limitations": [
+    "Windows publisher signing not provided",
+    "macOS Developer ID signing and notarization not provided",
+    "Windows 10, Windows 11 x64 and macOS 13/14 not directly tested",
+    "Physical PLC and real model provider not tested",
+    "Multi-user and per-project ACL not implemented",
+    "Production industry knowledge quality not verified"
+  ]
+}

@@ -8,23 +8,23 @@
 
 ## 桌面预览版与 AI 工作台
 
-产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.2 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.2-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.2 MB，ARM64 约 56.3 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
+产品现名 **FlexHMI**。原 `/simplehmi/` 地址、工程格式与目录继续兼容。Windows 桌面版复用 Microsoft Edge，内置 Node.js、协议依赖和 MCP 扩展，提供编辑、运行、全屏与停止服务入口。**0.4.3 双架构安装与功能验收已通过**，详见 [版本说明与下载](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)、[Windows 桌面版说明](docs/simplehmi/IPC-EDITION.md)。x64 约 60.5 MB，ARM64 约 56.6 MB；未签名预览版，现场设备仍需独立验证。旧 0.3.0 交叉构建安装器存在启动崩溃，请使用新版本。
 
 AI 工作台支持三种模式、生成计划、引用知识评估、关联影响预览与规则配置。已有真实外部 Agent 评估应用证据；内置模型需在界面配置自己的服务，尚未用真实账号验收。行业数据库能力和验收边界见 [行业评估](docs/simplehmi/ai/INDUSTRY.md)。
 
-macOS **0.4.2 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.2-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
+macOS **0.4.3 原生桌面预览版**已通过 Apple Silicon 与 Intel 的 macOS 15 安装及原生 WebKit 验收，内置运行环境，无需额外浏览器；见 [Mac 版说明](docs/simplehmi/MACOS.md)、[版本下载与验收](https://github.com/NSIETeam/FlexHMI/releases/tag/v0.4.3-preview)。当前未进行 Developer ID 签名和 Apple 公证，macOS 13/14 尚未验证。后续优先完整桌面功能和跨平台体验，不再单独围绕工控机做取舍。
 
-## 0.4.2 新增功能
+## 0.4.3 新增功能
 
-0.4.2 已发布 Windows x64 / ARM64 与 macOS Apple Silicon / Intel 四个安装包。安装验收范围、大小和校验值见 [版本记录](docs/simplehmi/releases/0.4.2.md) 与 [验收清单](docs/simplehmi/releases/0.4.2-qualification.json)。
+0.4.3 已发布 Windows x64 / ARM64 与 macOS Apple Silicon / Intel 四个安装包。安装验收范围、大小和校验值见 [版本记录](docs/simplehmi/releases/0.4.3.md) 与 [验收清单](docs/simplehmi/releases/0.4.3-qualification.json)。
 
 AI 工作台 → 工程与记录支持“恢复修改前版本”。先逐项查看应用前后差异，再应用；恢复会暂停自动控制，知识正文以新版本保存，现场设备输出不会回滚。HTTP、内置模型操作契约与 MCP 共用 project.revert。见 [Agent 历史恢复说明](docs/simplehmi/ai/AGENT-API.md#恢复修改前版本)。
 
-控制面板新增无代码**步骤流程**：配置步骤、输出和跳转条件，预览后应用，再单独启动。支持顺序、分支、循环、超时、逐点回读和人工接管；外部 Agent 可通过同一计划接口生成。导入 [三步供水示例](examples/water-steps.simplehmi.json) 后，在“控制”面板启动即可体验。见 [控制与步骤流程](docs/simplehmi/ai/CONTROL.md)。这些功能已包含在 0.4.2 中；旧 Windows 0.4.0 / macOS 0.4.1 包不包含。
+控制面板新增无代码**步骤流程**：配置步骤、输出和跳转条件，预览后应用，再单独启动。支持顺序、分支、循环、超时、逐点回读和人工接管；外部 Agent 可通过同一计划接口生成。导入 [三步供水示例](examples/water-steps.simplehmi.json) 后，在“控制”面板启动即可体验。见 [控制与步骤流程](docs/simplehmi/ai/CONTROL.md)。这些功能已包含在 0.4.3 中；旧 Windows 0.4.0 / macOS 0.4.1 包不包含。
 
-普通拖动、属性修改和保存现已进入持久化历史。AI 工作台 → 工程与记录可按工程/来源筛选、翻页、查看差异和恢复。无变化的重复保存不增加记录；恢复会暂停控制。0.4.2 安装包已包含并通过安装后验证。
+普通拖动、属性修改和保存现已进入持久化历史。AI 工作台 → 工程与记录可按工程/来源筛选、翻页、查看差异和恢复。无变化的重复保存不增加记录；恢复会暂停控制。0.4.3 安装包已包含并通过安装后验证。
 
-AI 工作台 → 连接外部 Agent 新增可选的**访问保护**：设置所有者密码后，浏览器登录，Agent 使用可撤销、有有效期的只读 / 工程设计 / 控制授权。范围由服务端校验，真实设备写入另行授权；启用前仍是可信本机模式。见 [访问保护说明](docs/simplehmi/ai/ACCESS.md)。0.4.2 安装包已包含此功能。
+AI 工作台 → 连接外部 Agent 新增可选的**访问保护**：设置所有者密码后，浏览器登录，Agent 使用可撤销、有有效期的只读 / 工程设计 / 控制授权。范围由服务端校验，真实设备写入另行授权；启用前仍是可信本机模式。见 [访问保护说明](docs/simplehmi/ai/ACCESS.md)。0.4.3 安装包已包含此功能。
 
 ## 历史 0.2.0 桌面版与图形扩展
 

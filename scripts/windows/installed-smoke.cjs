@@ -20,11 +20,12 @@ const {pathToFileURL}=require('node:url'),{createHash}=require('node:crypto');
    // Deliberately omit FLEXHMI_URL to test installed IPC controller discovery.
    const env={...process.env,FLEXHMI_ACCESS:'full',FLEXHMI_PHYSICAL_WRITES:'0'};delete env.FLEXHMI_URL;
    const transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'integrations/mcp/server.mjs')],env,stderr:'pipe'});
-   try{await client.connect(transport);assert.equal((await client.listTools()).tools.length,24);const state=await client.callTool({name:'flexhmi_state',arguments:{}});assert.notEqual(state.isError,true);assert.equal(state.structuredContent.project.id,snapshot.project.id)}finally{await client.close()}
+   let mcpToolCount;
+   try{await client.connect(transport);mcpToolCount=(await client.listTools()).tools.length;assert.equal(mcpToolCount,24);const state=await client.callTool({name:'flexhmi_state',arguments:{}});assert.notEqual(state.isError,true);assert.equal(state.structuredContent.project.id,snapshot.project.id)}finally{await client.close()}
    const {routePage}=await import(pathToFileURL(path.join(root,'simplehmi/topology.mjs')));
    const routed=routePage({id:'ci',name:'布线验收',width:1000,height:600,components:[{id:'a',kind:'pump',label:'a',x:100,y:160,w:120,h:120},{id:'b',kind:'pump',label:'b',x:620,y:160,w:120,h:120}],connections:[{id:'return',from:'b',to:'a',fromPort:'top',toPort:'top'}]});assert.equal(routed.page.connections[0].routeInfo.bends,2);assert.equal(routed.page.connections[0].routeInfo.arrowDirection,'bottom');
    const connectionSource=await fetch(service.origin+'/simplehmi/connection-editor.mjs');assert.equal(connectionSource.ok,true);assert.match(await connectionSource.text(),/connectionDraft/);
-   fs.writeFileSync(path.join(artifacts,'latest-features.json'),JSON.stringify({sourceCommit:provenance.sourceCommit,version:provenance.version,sourceFilesVerified:Object.keys(provenance.sourceFiles).length,mcpInstalled:true,mcpToolCount:23,ipcDiscovery:true,connectionEditorShipped:true,physicalWrites:false},null,2));
+   fs.writeFileSync(path.join(artifacts,'latest-features.json'),JSON.stringify({sourceCommit:provenance.sourceCommit,version:provenance.version,sourceFilesVerified:Object.keys(provenance.sourceFiles).length,mcpInstalled:true,mcpToolCount,ipcDiscovery:true,connectionEditorShipped:true,physicalWrites:false},null,2));
   }
   assert.equal(snapshot.project.simulation,'water-transfer');assert.equal((await api('control/status')).state,'manual');
   await api('write',{tagId:'pump_command',value:0});await delay(1400);const held1=(await api('values')).values;await delay(1400);const held2=(await api('values')).values;
