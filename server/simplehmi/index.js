@@ -5,6 +5,7 @@ const {EventEmitter}=require('events');
 const modbus=require('../runtime/devices/modbus');
 const {stepWaste}=require('./waste-simulation');
 const {stepWater}=require('./water-simulation');
+const {validateSimulation,initialSimulationValues}=require('./simulation-contract');
 const {validateKnowledge,validateKnowledgeRevision,searchKnowledge}=require('./knowledge');
 const {validateControl,controlSignature,createControl}=require('./control');
 const {mountAgent,digest}=require('./agent');
@@ -29,6 +30,7 @@ function validate(p){
   if(!Number.isInteger(+d.unitId)||+d.unitId<0||+d.unitId>247||!Number.isFinite(+d.polling)||+d.polling<250||+d.polling>60000||!Number.isFinite(+d.timeout)||+d.timeout<500||+d.timeout>10000)throw Error('高级通信参数超出范围');
   for(const t of d.tags){unique(t.id,'设备/'+d.id+'/变量/'+t.id);if(typeof t.name!=='string'||t.name.length>80||!Number.isInteger(+t.address)||+t.address<1||+t.address>65535||!['UInt16','Int16','Float32','Bool'].includes(t.type)||!['0','100000','300000','400000'].includes(String(t.memory))||!Number.isFinite(+t.divisor)||+t.divisor<=0)throw Error('变量类型、地址或倍率无效');if(d.protocol!=='sim' && (['0','100000'].includes(String(t.memory))!==(t.type==='Bool')))throw Error('线圈与离散输入必须使用 Bool');}
  }
+ validateSimulation(p);
  const tagIds=new Set(p.devices.flatMap(d=>d.tags.map(t=>t.id)));
  for(const pg of p.pages){unique(pg.id,'画面/'+pg.id);if(!Array.isArray(pg.components)||pg.components.length>300||![pg.width,pg.height].every(Number.isFinite)||pg.width<320||pg.width>4096||pg.height<240||pg.height>2160)throw Error('画面尺寸或组件数量无效');for(const c of pg.components){if(c.ports){for(const [side,pt] of Object.entries(c.ports))if(!['left','right','top','bottom'].includes(side)||!pt||![pt.x,pt.y].every(v=>Number.isFinite(v)&&v>=0&&v<=1))throw Error('组件端口坐标无效')}if(['tank','gauge'].includes(c.kind)){c.min??=0;c.max??=100;if(!Number.isFinite(c.min)||!Number.isFinite(c.max)||c.max<=c.min)throw Error('仪表量程无效')}if(c.kind==='alarm'&&c.threshold!=null&&!Number.isFinite(c.threshold))throw Error('画面/'+pg.id+'/组件/'+c.id+'/threshold：报警上限必须是有限数值；留空可保存为未配置');unique(c.id,'画面/'+pg.id+'/组件/'+c.id);if(!TYPES.has(c.kind)||![c.x,c.y,c.w,c.h].every(Number.isFinite)||c.x<0||c.y<0||c.x>pg.width||c.y>pg.height||c.w<10||c.h<10||c.w>4096||c.h>2160)throw Error('组件格式无效');if([c.tagId,c.valueTag,...(Array.isArray(c.details)?c.details.map(d=>d.tagId||d.tag):[])].some(id=>id&&!tagIds.has(id)))throw Error('组件引用了不存在的变量');}}
  for(const pg of p.pages){
@@ -42,9 +44,10 @@ function validate(p){
 }
 function fuxaDevice(p,d){
  const id=`sh_${p.id}_${d.id}`;
+ const initial=initialSimulationValues(p);
  return {id,name:d.name,type:d.protocol==='sim'?'FuxaServer':'ModbusTCP',enabled:true,polling:+d.polling,
  property:{address:`${d.host}:${d.port}`,slaveid:String(d.unitId),timeout:+d.timeout,connectionOption:'TcpPort'},
- tags:Object.fromEntries(d.tags.map(t=>{const tid=`sh_${p.id}_${t.id}`;return [tid,{id:tid,name:t.name,type:d.protocol==='sim'?(t.type==='Bool'?'boolean':'number'):t.type,address:String(t.address),memaddress:String(t.memory),divisor:+t.divisor,format:2,init:String(t.initial||0),daq:{enabled:false,changed:false,restored:false,interval:60}}]}))};
+ tags:Object.fromEntries(d.tags.map(t=>{const tid=`sh_${p.id}_${t.id}`;return [tid,{id:tid,name:t.name,type:d.protocol==='sim'?(t.type==='Bool'?'boolean':'number'):t.type,address:String(t.address),memaddress:String(t.memory),divisor:+t.divisor,format:2,init:String(d.protocol==='sim'&&Object.hasOwn(initial,t.id)?initial[t.id]:t.initial||0),daq:{enabled:false,changed:false,restored:false,interval:60}}]}))};
 }
 module.exports=function mount(app,runtime,settings,base='',io){
  const dir=path.join(settings.workDir,'simplehmi');fs.mkdirSync(dir,{recursive:true});

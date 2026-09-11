@@ -92,6 +92,13 @@ test('SimpleHMI real FUXA integration', {timeout:90000}, async t=>{
  });
  await t.test('water process runs through FUXA with independent opposite levels, conservation and stop/resume',async()=>{
   const {waterDemo}=await import('../simplehmi/water-demo.mjs');await request('/project',waterDemo('visualization','water_integration'));
+  const baseline=(await request('/agent/state')).data;
+  const invalid=structuredClone(baseline.project);invalid.devices[0].tags.find(t=>t.id==='pump_running').writable=true;
+  const saved=await request('/project',invalid,false);assert.equal(saved.status,400);assert.equal(saved.data.code,'invalid-simulation');
+  const preview=await request('/agent/plans',{expectedRevision:baseline.revision,operations:[{op:'tag.upsert',deviceId:'supply',tag:{id:'pump_running',writable:true}}]},false);
+  assert.equal(preview.status,400);assert.match(preview.data.error,/pump_running.*只读/);
+  assert.equal((await request('/agent/state')).data.revision,baseline.revision);
+  assert.equal((await request('/write',{tagId:'pump_running',value:0},false)).status,400);
   const first=await until(async()=>{const v=(await request('/values')).data.values;return v.source_level?.quality==='good'&&v.destination_level?.quality==='good'&&v});
   await sleep(2100);const next=(await request('/values')).data.values;assert.ok(next.source_level.value<first.source_level.value);assert.ok(next.destination_level.value>first.destination_level.value);assert.ok(Math.abs(next.total_volume.value-first.total_volume.value)<1e-8);
   await request('/write',{tagId:'pump_command',value:0});await until(async()=>Number((await request('/values')).data.values.pump_running.value)===0);

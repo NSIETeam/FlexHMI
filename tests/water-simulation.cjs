@@ -1,5 +1,35 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {stepWater}=require('../server/simplehmi/water-simulation');
+const {validate,fuxaDevice}=require('../server/simplehmi');
+test('process contracts reject incompatible generated points without mutating the project',async()=>{
+ const {waterDemo}=await import('../simplehmi/water-demo.mjs');
+ for(const [id,patch] of [['pump_running',{writable:true}],['source_level',{type:'Bool'}],['pump_command',{sim:'wave'}],['pump_command',{initial:2}],['pump_command',{writable:false}]]){
+  const p=waterDemo(),tag=p.devices[0].tags.find(t=>t.id===id);Object.assign(tag,patch);const before=structuredClone(p);
+  assert.throws(()=>validate(p),e=>e.code==='invalid-simulation'&&e.message.includes(id));assert.deepEqual(p,before);
+ }
+ const p=waterDemo();p.devices[0].tags=p.devices[0].tags.filter(t=>t.id!=='pump_command');assert.throws(()=>validate(p),/缺少命令点 pump_command/);
+ p.simulation='invented';assert.throws(()=>validate(p),/未知过程模型/);
+ const physical=waterDemo();physical.devices[0].protocol='ModbusTCP';assert.throws(()=>validate(physical),/必须属于模拟设备/);
+ delete physical.simulation;assert.doesNotThrow(()=>validate(physical));
+});
+test('model startup feedback follows commands rather than conflicting tag initial values',async()=>{
+ const {waterDemo}=await import('../simplehmi/water-demo.mjs');const p=waterDemo('intelligent-control','startup_test');
+ p.devices[0].tags.find(t=>t.id==='source_level').initial=1;
+ const dev=fuxaDevice(validate(p),p.devices[0]),initial=id=>dev.tags['sh_'+p.id+'_'+id].init;
+ assert.equal(initial('pump_running'),'0');assert.equal(initial('transfer_flow'),'0');assert.equal(initial('source_level'),'65');assert.equal(initial('total_volume'),'4.15');
+ // Unused model outputs may be removed; unrelated manual tags keep their behavior.
+ for(const page of p.pages){page.components=[];page.connections=[]}delete p.control;
+ p.devices[0].tags=p.devices[0].tags.filter(t=>t.id==='pump_command');assert.doesNotThrow(()=>validate(p));
+});
+test('AI plans cannot turn process feedback into commands',async()=>{
+ const {waterDemo}=await import('../simplehmi/water-demo.mjs'),{applyOperations,digest}=require('../server/simplehmi/agent');const p=waterDemo(),before=digest(p);
+ await assert.rejects(applyOperations(p,{operations:[{op:'tag.upsert',deviceId:'supply',tag:{id:'pump_running',writable:true}}]},validate),e=>e.code==='invalid-simulation'&&/pump_running/.test(e.message));
+ assert.equal(digest(p),before);
+});
+test('waste process contract retains legacy binary types and rejects writable feedback',()=>{
+ const p=structuredClone(require('../simplehmi/waste-to-energy.json'));assert.doesNotThrow(()=>validate(p));
+ p.devices[0].tags.find(t=>t.id==='furnace_temp').writable=true;assert.throws(()=>validate(p),/furnace_temp.*必须只读/);
+});
 test('two tanks conserve water and move in opposite directions with unequal capacity',()=>{
  let p=stepWater(null,0);const initial=p.values;
  for(let i=0;i<100;i++){const next=stepWater(p.state,1);assert.ok(next.values.source_level<p.values.source_level);assert.ok(next.values.destination_level>p.values.destination_level);assert.ok(Math.abs(next.values.total_volume-initial.total_volume)<1e-10);assert.ok(Math.abs((p.state.sourceVolume-next.state.sourceVolume)-(next.state.destinationVolume-p.state.destinationVolume))<1e-10);p=next}
