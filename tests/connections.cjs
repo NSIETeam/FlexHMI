@@ -26,3 +26,23 @@ test('runtime flow only animates fresh true Bool values and stops on stale data'
  const {connectionFlowState}=await import('../simplehmi/agent-studio.mjs'),e={tagId:'run'},tags=[{id:'run',type:'Bool',polling:500}],values={run:{quality:'good',ts:10000,value:true}};
  assert.equal(connectionFlowState(e,values,tags,true,11000),'flowing');assert.equal(connectionFlowState(e,values,tags,false,11000),'static');assert.equal(connectionFlowState(e,values,tags,true,14000),'stale');values.run.value=false;assert.equal(connectionFlowState(e,values,tags,true,11000),'stopped');values.run.quality='stale';assert.equal(connectionFlowState(e,values,tags,true,11000),'stale');assert.equal(connectionFlowState(e,values,[{id:'run',type:'Float32'}],true,11000),'static');
 });
+
+test('explicit returns do not reorder the main process even when IDs and feed branches prefer another cycle entry',async()=>{
+ const {optimizePage,routePage,segmentBlocked,portAnchor}=await import('../simplehmi/topology.mjs');
+ const original=require('./fixtures/complex-process.json'),input=structuredClone(original),result=optimizePage(input),p=result.page,byId=Object.fromEntries(p.components.map(n=>[n.id,n]));
+ const main=['waste','furnace','boiler','reactor','filter','fan','stack'];for(let i=1;i<main.length;i++)assert.ok(byId[main[i-1]].x<byId[main[i]].x,main[i]);
+ assert.deepEqual(input,original);assert.ok(!result.diagnostics.some(d=>d.code==='cycle-layout'));
+ const back=p.connections.find(e=>e.id==='edge_10');assert.equal(back.routeMode,'return');assert.equal(back.layoutRole,'return');assert.equal(back.from,'fan');assert.equal(back.to,'furnace');assert.equal(back.routeInfo.bends,2);
+ for(const e of p.connections){assert.equal(e.routeStatus,'ok');assert.deepEqual(e.points[0],portAnchor(byId[e.from],e.resolvedPorts.from));assert.deepEqual(e.points.at(-1),portAnchor(byId[e.to],e.resolvedPorts.to));const obstacles=p.components.filter(c=>c.id!==e.from&&c.id!==e.to).map(c=>({x:c.x,y:c.y,r:c.x+c.w,b:c.y+c.h}));for(let i=1;i<e.points.length;i++){assert.ok(e.points[i].x===e.points[i-1].x||e.points[i].y===e.points[i-1].y);assert.ok(!segmentBlocked(e.points[i-1],e.points[i],obstacles));}}
+ assert.deepEqual(optimizePage(p).page,p);
+ const permuted=optimizePage({...input,components:[...input.components].reverse(),connections:[...input.connections].reverse()}).page;
+ for(const c of permuted.components)assert.deepEqual(c,byId[c.id]);for(const e of permuted.connections)assert.deepEqual(e,p.connections.find(x=>x.id===e.id));
+ const moved=structuredClone(p);moved.components.find(c=>c.id==='reactor').y+=40;const routed=routePage(moved).page;assert.deepEqual(routed.components,moved.components);assert.equal(routed.connections.find(e=>e.id==='edge_2').to,'reactor');assert.equal(routed.connections.find(e=>e.id==='edge_3').from,'reactor');assert.notDeepEqual(routed.connections.find(e=>e.id==='edge_2').points,p.connections.find(e=>e.id==='edge_2').points);
+ assert.deepEqual(routed.connections.find(e=>e.id==='edge_5'),p.connections.find(e=>e.id==='edge_5'));
+});
+test('declared return decisions are reversible and inferred layoutRole cannot override new graph direction',async()=>{
+ const {graphColumns}=await import('../simplehmi/graph-layout.mjs');const nodes=['a','b','c'].map(id=>({id}));
+ const edges=[{id:'ab',from:'a',to:'b',routeMode:'return'},{id:'bc',from:'b',to:'c'},{id:'ca',from:'c',to:'a'}];
+ const r=graphColumns(nodes,edges);assert.deepEqual(r.columns.map(([,items])=>items.map(c=>c.id)),[['b'],['c'],['a']]);assert.deepEqual(r.feedback,['ab']);assert.deepEqual(r.cycles,[]);
+ const again=graphColumns(nodes,edges.map(e=>({...e,routeMode:'auto',layoutRole:'return'})));assert.deepEqual(again.columns.map(([,items])=>items.map(c=>c.id)),[['a'],['b'],['c']]);assert.deepEqual(again.feedback,['ca']);assert.equal(again.cycles.length,1);
+});

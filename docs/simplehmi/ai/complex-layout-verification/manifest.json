@@ -1,0 +1,25 @@
+{
+  "sourceSha256": {
+    "simplehmi/graph-layout.mjs": "7335bbed3d4e95b5916632ffdea69d9d517d5d3c83e1c09422be0b649de2f6c9",
+    "simplehmi/topology.mjs": "57bdee419233c7a3a808f7a554fe066b55f7ddf862fb94d859ae55c3f9cb097f",
+    "server/simplehmi/agent.js": "1de4fe6a5b639e8eb549c1141632b08cd958428d7832d84b18bf08c255d3ee52",
+    "server/simplehmi/ai-contract.js": "593eaf2645a6c4262db36c0b283b00030403df2c566eae821f1b970ab2217db1",
+    "tests/connections.cjs": "8474c8475be5fd8bae2d0562c593f4e73f571efd7cb46a0bec4aa2921ae99c72",
+    "tests/fixtures/complex-process.json": "a9f4d1bafbce71b22e5bd59af64070f3852fdd56d6ce4d4e5471e43aa8f60c44",
+    "scripts/browser/complex-layout.cjs": "06ae5cbf06ca6abbde6be5088953e99254d133fb330deb9e56c7e084982d1211",
+    "scripts/check.cjs": "173b6b300d87cdfa43f51aca92ead2aaf95106c8a41377eb3d274040626c3e42"
+  },
+  "evidenceSha256": {
+    "browser.log": "fdfa0d3ae76b595d998612fea8b814703ede3840b8e3e6a6b18aafc301bd032c",
+    "backend.log": "7254520c7badbfbc7c074ce67c21b3c0caffb71a8c2a8679228900688a842483",
+    "optimized-project.json": "69c841d9ce6cfe4c8a7fc2c1e1d6ba2f55464d335e928334de2387a4fe081c69",
+    "FlexHMI-多分支优化预览.png": "7f09272daab48ddf1f71b352ea995b93ad0cbbd93c81023428e85578692816ae",
+    "first-browser-failure.log": "81f6c16a1b5f0ee8de3e85325dc7dd38adef047b7461828389497eb069fe6594",
+    "before-after.json": "9af2893086a91fdfee977c03994a1d06721eb06999a7fcf1c94718a3e781ca4b",
+    "README.md": "1f379bb3ef0d5f6391af05cc831a475344c1623db0a70de3e04856a692aff9ad",
+    "second-browser-failure.log": "81f6c16a1b5f0ee8de3e85325dc7dd38adef047b7461828389497eb069fe6594",
+    "FlexHMI-主流程与回流.png": "aadada7e8f619a69efe63a9d24137ef6a546998bf5581674dc8e9f7620270a28",
+    "complex-process.json": "a9f4d1bafbce71b22e5bd59af64070f3852fdd56d6ce4d4e5471e43aa8f60c44",
+    "complex-browser.json": "7582991636913262c67fef652fc64f28c0969f7f865b2c9b191b269c64eeeb1a"
+  }
+}

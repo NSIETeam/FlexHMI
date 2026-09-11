@@ -136,5 +136,5 @@ export function optimizePage(input) {
   page.height=Math.max(page.height,Math.ceil(Math.max(...movable.map(c=>c.y+c.h))+48));
   if(page.height>2160)throw Error('组件超过单页可用空间，请拆分画面');
   page.width=Math.max(page.width,x);if(page.width>4096)throw Error('流程过长，请拆分画面');
-  const result=routePage(page);if(graph.cycles.length)result.diagnostics.push({code:'cycle-layout',message:'循环内设备按工艺顺序展开，回流使用外侧通道；流向保持从源到目标',components:graph.cycles.flat(),connections:graph.feedback});return result;
+  const result=routePage(page);if(graph.cycles.length)result.diagnostics.push({code:'cycle-layout',message:'未标注回流的循环已按确定性顺序展开，请核对主流程与回流；可将回流连接明确设为“回流”再优化。箭头仍从源指向目标',components:graph.cycles.flat(),connections:graph.feedback});return result;
 }

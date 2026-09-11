@@ -1,0 +1,282 @@
+{
+  "before": {
+    "order": [
+      "filter",
+      "fan",
+      "furnace",
+      "boiler",
+      "reactor"
+    ],
+    "diagnostics": [
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_0",
+          "edge_5"
+        ],
+        "message": "管线 edge_0 与 edge_5 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-crossing",
+        "connections": [
+          "edge_0",
+          "edge_6"
+        ],
+        "point": {
+          "x": 756,
+          "y": 476
+        },
+        "message": "管线 edge_0 与 edge_6 交叉但不连通；留白跨线只表示越过"
+      },
+      {
+        "code": "route-crossing",
+        "connections": [
+          "edge_3",
+          "edge_9"
+        ],
+        "point": {
+          "x": 996,
+          "y": 324
+        },
+        "message": "管线 edge_3 与 edge_9 交叉但不连通；留白跨线只表示越过"
+      },
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_3",
+          "edge_10"
+        ],
+        "message": "管线 edge_3 与 烟气回流 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_5",
+          "edge_6"
+        ],
+        "message": "管线 edge_5 与 edge_6 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-crossing",
+        "connections": [
+          "edge_5",
+          "edge_8"
+        ],
+        "point": {
+          "x": 1228,
+          "y": 476
+        },
+        "message": "管线 edge_5 与 edge_8 交叉但不连通；留白跨线只表示越过"
+      },
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_6",
+          "edge_7"
+        ],
+        "message": "管线 edge_6 与 edge_7 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_6",
+          "edge_8"
+        ],
+        "message": "管线 edge_6 与 edge_8 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "cycle-layout",
+        "message": "循环内设备按工艺顺序展开，回流使用外侧通道；流向保持从源到目标",
+        "components": [
+          "boiler",
+          "fan",
+          "filter",
+          "furnace",
+          "reactor"
+        ],
+        "connections": [
+          "edge_3"
+        ]
+      }
+    ],
+    "connections": [
+      {
+        "id": "edge_0",
+        "from": "waste",
+        "to": "furnace",
+        "bends": 2
+      },
+      {
+        "id": "edge_1",
+        "from": "furnace",
+        "to": "boiler",
+        "bends": 0
+      },
+      {
+        "id": "edge_2",
+        "from": "boiler",
+        "to": "reactor",
+        "bends": 0
+      },
+      {
+        "id": "edge_3",
+        "from": "reactor",
+        "to": "filter",
+        "role": "return",
+        "bends": 2
+      },
+      {
+        "id": "edge_4",
+        "from": "filter",
+        "to": "fan",
+        "bends": 0
+      },
+      {
+        "id": "edge_5",
+        "from": "fan",
+        "to": "stack",
+        "bends": 4
+      },
+      {
+        "id": "edge_6",
+        "from": "lime",
+        "to": "reactor",
+        "bends": 4
+      },
+      {
+        "id": "edge_7",
+        "from": "carbon",
+        "to": "filter",
+        "bends": 2
+      },
+      {
+        "id": "edge_8",
+        "from": "boiler",
+        "to": "turbine",
+        "bends": 2
+      },
+      {
+        "id": "edge_9",
+        "from": "furnace",
+        "to": "ash",
+        "bends": 2
+      },
+      {
+        "id": "edge_10",
+        "from": "fan",
+        "to": "furnace",
+        "mode": "return",
+        "bends": 2
+      }
+    ]
+  },
+  "after": {
+    "order": [
+      "furnace",
+      "boiler",
+      "reactor",
+      "filter",
+      "fan"
+    ],
+    "diagnostics": [
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_0",
+          "edge_6"
+        ],
+        "message": "管线 edge_0 与 edge_6 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-overlap",
+        "connections": [
+          "edge_6",
+          "edge_10"
+        ],
+        "message": "管线 edge_6 与 烟气回流 共用一段路径，请调整端口或设备位置以明确区分"
+      },
+      {
+        "code": "route-crossing",
+        "connections": [
+          "edge_7",
+          "edge_10"
+        ],
+        "point": {
+          "x": 988,
+          "y": 240
+        },
+        "message": "管线 edge_7 与 烟气回流 交叉但不连通；留白跨线只表示越过"
+      }
+    ],
+    "connections": [
+      {
+        "id": "edge_0",
+        "from": "waste",
+        "to": "furnace",
+        "bends": 2
+      },
+      {
+        "id": "edge_1",
+        "from": "furnace",
+        "to": "boiler",
+        "bends": 2
+      },
+      {
+        "id": "edge_2",
+        "from": "boiler",
+        "to": "reactor",
+        "bends": 2
+      },
+      {
+        "id": "edge_3",
+        "from": "reactor",
+        "to": "filter",
+        "bends": 2
+      },
+      {
+        "id": "edge_4",
+        "from": "filter",
+        "to": "fan",
+        "bends": 0
+      },
+      {
+        "id": "edge_5",
+        "from": "fan",
+        "to": "stack",
+        "bends": 0
+      },
+      {
+        "id": "edge_6",
+        "from": "lime",
+        "to": "reactor",
+        "bends": 4
+      },
+      {
+        "id": "edge_7",
+        "from": "carbon",
+        "to": "filter",
+        "bends": 2
+      },
+      {
+        "id": "edge_8",
+        "from": "boiler",
+        "to": "turbine",
+        "bends": 0
+      },
+      {
+        "id": "edge_9",
+        "from": "furnace",
+        "to": "ash",
+        "bends": 2
+      },
+      {
+        "id": "edge_10",
+        "from": "fan",
+        "to": "furnace",
+        "mode": "return",
+        "role": "return",
+        "bends": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "id": "complex_process",
+  "name": "多分支布线验收",
+  "width": 1800,
+  "height": 1000,
+  "components": [
+    {
+      "id": "waste",
+      "kind": "equipment",
+      "label": "垃圾进料",
+      "x": 80,
+      "y": 160,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "furnace",
+      "kind": "equipment",
+      "label": "焚烧炉",
+      "x": 280,
+      "y": 160,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "boiler",
+      "kind": "equipment",
+      "label": "余热锅炉",
+      "x": 480,
+      "y": 160,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "reactor",
+      "kind": "equipment",
+      "label": "反应塔",
+      "x": 680,
+      "y": 160,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "filter",
+      "kind": "equipment",
+      "label": "布袋除尘",
+      "x": 80,
+      "y": 360,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "fan",
+      "kind": "equipment",
+      "label": "引风机",
+      "x": 280,
+      "y": 360,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "stack",
+      "kind": "equipment",
+      "label": "烟囱",
+      "x": 480,
+      "y": 360,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "lime",
+      "kind": "equipment",
+      "label": "石灰浆",
+      "x": 680,
+      "y": 360,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "carbon",
+      "kind": "equipment",
+      "label": "活性炭",
+      "x": 80,
+      "y": 560,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "turbine",
+      "kind": "equipment",
+      "label": "汽轮机",
+      "x": 280,
+      "y": 560,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "id": "ash",
+      "kind": "equipment",
+      "label": "灰渣收集",
+      "x": 480,
+      "y": 560,
+      "w": 120,
+      "h": 120
+    }
+  ],
+  "connections": [
+    {
+      "id": "edge_0",
+      "from": "waste",
+      "to": "furnace"
+    },
+    {
+      "id": "edge_1",
+      "from": "furnace",
+      "to": "boiler"
+    },
+    {
+      "id": "edge_2",
+      "from": "boiler",
+      "to": "reactor"
+    },
+    {
+      "id": "edge_3",
+      "from": "reactor",
+      "to": "filter"
+    },
+    {
+      "id": "edge_4",
+      "from": "filter",
+      "to": "fan"
+    },
+    {
+      "id": "edge_5",
+      "from": "fan",
+      "to": "stack"
+    },
+    {
+      "id": "edge_6",
+      "from": "lime",
+      "to": "reactor"
+    },
+    {
+      "id": "edge_7",
+      "from": "carbon",
+      "to": "filter"
+    },
+    {
+      "id": "edge_8",
+      "from": "boiler",
+      "to": "turbine"
+    },
+    {
+      "id": "edge_9",
+      "from": "furnace",
+      "to": "ash"
+    },
+    {
+      "id": "edge_10",
+      "from": "fan",
+      "to": "furnace",
+      "routeMode": "return",
+      "label": "烟气回流"
+    }
+  ]
+}

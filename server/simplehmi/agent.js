@@ -38,8 +38,8 @@ function checkNewReferences(before,p){
 }
 function repair(p,impacts){
  const tags=new Set(p.devices.flatMap(d=>d.tags.map(t=>t.id))),assets=new Set((p.customSymbols||[]).map(a=>a.id));
- for(const pg of p.pages){const ids=new Set(pg.components.map(c=>c.id));pg.connections=(pg.connections||[]).filter(e=>{if(ids.has(e.from)&&ids.has(e.to))return true;impacts.push({code:'connection-removed',entity:e.id,message:'端点已删除，关联管线自动移除'});return false});
-  for(const c of [...pg.components,...pg.connections]){for(const key of ['tagId','valueTag'])if(c[key]&&!tags.has(c[key])){impacts.push({code:'binding-cleared',entity:c.id,field:key,tagId:c[key],message:'变量已删除，关联显示或动作绑定已解除'});delete c[key]}
+ for(const pg of p.pages){const ids=new Set(pg.components.map(c=>c.id));if(pg.connections!==undefined)pg.connections=(pg.connections||[]).filter(e=>{if(ids.has(e.from)&&ids.has(e.to))return true;impacts.push({code:'connection-removed',entity:e.id,message:'端点已删除，关联管线自动移除'});return false});
+  for(const c of [...pg.components,...(pg.connections||[])]){for(const key of ['tagId','valueTag'])if(c[key]&&!tags.has(c[key])){impacts.push({code:'binding-cleared',entity:c.id,field:key,tagId:c[key],message:'变量已删除，关联显示或动作绑定已解除'});delete c[key]}
    if(Array.isArray(c.details))c.details=c.details.filter(d=>{if(!(d.tagId||d.tag)||tags.has(d.tagId||d.tag))return true;impacts.push({code:'detail-cleared',entity:c.id,tagId:d.tagId||d.tag,message:'设备详情中的失效变量已移除'});return false});
    if(c.assetId?.startsWith('custom_')&&!assets.has(c.assetId))throw Error('自定义图形仍被组件使用，请先替换图形或删除组件');
   }
@@ -101,7 +101,7 @@ async function applyOperations(before,request,validate,store,history){
  if(fileEffect)return {project:p,changes:[{entity:'saved-project/'+fileEffect.projectId,action:fileEffect.action==='delete'?'archived':'restored'}],impacts,diagnostics,blocked:false,fileConditions,fileEffect};
  validateKnowledgeRevision(before,p);checkNewReferences(referenceBaseline,p);repair(p,impacts);p=validate(p);
  const {optimizePage,routePage}=await import('../../simplehmi/topology.mjs');
- p.pages=p.pages.map(pg=>{const result=optimize.has(pg.id)?optimizePage(pg):routePage(pg);diagnostics.push(...result.diagnostics.map(d=>({...d,pageId:pg.id})));return result.page});
+ p.pages=p.pages.map(pg=>{if(!optimize.has(pg.id)&&!pg.connections?.length)return pg;const result=optimize.has(pg.id)?optimizePage(pg):routePage(pg);diagnostics.push(...result.diagnostics.map(d=>({...d,pageId:pg.id})));return result.page});
  p=validate(p);
  if(p.id===before.id&&(p.system?.mode||'visualization')!==(before.system?.mode||'visualization')){
   const from=before.system?.mode||'visualization',to=p.system.mode,names={visualization:'数据可视化','intelligent-control':'智能控制','industry-ai':'行业 AI 系统'};

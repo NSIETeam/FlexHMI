@@ -1,0 +1,529 @@
+{
+  "schemaVersion": 1,
+  "id": "complex_browser",
+  "name": "多分支布局验收",
+  "devices": [],
+  "activePageId": "complex_process",
+  "pages": [
+    {
+      "id": "complex_process",
+      "name": "多分支布线验收",
+      "width": 1800,
+      "height": 1000,
+      "components": [
+        {
+          "id": "waste",
+          "kind": "text",
+          "label": "垃圾进料",
+          "x": 80,
+          "y": 528,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "furnace",
+          "kind": "text",
+          "label": "焚烧炉",
+          "x": 312,
+          "y": 344,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "boiler",
+          "kind": "text",
+          "label": "余热锅炉",
+          "x": 544,
+          "y": 436,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "reactor",
+          "kind": "text",
+          "label": "反应塔",
+          "x": 776,
+          "y": 252,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "filter",
+          "kind": "text",
+          "label": "布袋除尘",
+          "x": 1008,
+          "y": 344,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "fan",
+          "kind": "text",
+          "label": "引风机",
+          "x": 1240,
+          "y": 344,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "stack",
+          "kind": "text",
+          "label": "烟囱",
+          "x": 1472,
+          "y": 344,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "lime",
+          "kind": "text",
+          "label": "石灰浆",
+          "x": 80,
+          "y": 344,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "carbon",
+          "kind": "text",
+          "label": "活性炭",
+          "x": 80,
+          "y": 160,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "turbine",
+          "kind": "text",
+          "label": "汽轮机",
+          "x": 776,
+          "y": 436,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        },
+        {
+          "id": "ash",
+          "kind": "text",
+          "label": "灰渣收集",
+          "x": 544,
+          "y": 252,
+          "w": 120,
+          "h": 120,
+          "fontSize": 18,
+          "color": "#343c43",
+          "textAlign": "center"
+        }
+      ],
+      "connections": [
+        {
+          "id": "edge_0",
+          "from": "waste",
+          "to": "furnace",
+          "points": [
+            {
+              "x": 200,
+              "y": 588
+            },
+            {
+              "x": 256,
+              "y": 588
+            },
+            {
+              "x": 256,
+              "y": 404
+            },
+            {
+              "x": 312,
+              "y": 404
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_1",
+          "from": "furnace",
+          "to": "boiler",
+          "points": [
+            {
+              "x": 432,
+              "y": 404
+            },
+            {
+              "x": 488,
+              "y": 404
+            },
+            {
+              "x": 488,
+              "y": 496
+            },
+            {
+              "x": 544,
+              "y": 496
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_2",
+          "from": "boiler",
+          "to": "reactor",
+          "points": [
+            {
+              "x": 664,
+              "y": 496
+            },
+            {
+              "x": 720,
+              "y": 496
+            },
+            {
+              "x": 720,
+              "y": 312
+            },
+            {
+              "x": 776,
+              "y": 312
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_3",
+          "from": "reactor",
+          "to": "filter",
+          "points": [
+            {
+              "x": 896,
+              "y": 312
+            },
+            {
+              "x": 952,
+              "y": 312
+            },
+            {
+              "x": 952,
+              "y": 404
+            },
+            {
+              "x": 1008,
+              "y": 404
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_4",
+          "from": "filter",
+          "to": "fan",
+          "points": [
+            {
+              "x": 1128,
+              "y": 404
+            },
+            {
+              "x": 1240,
+              "y": 404
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 0,
+            "arrowDirection": "right",
+            "reason": "端口同轴，直接连接"
+          }
+        },
+        {
+          "id": "edge_5",
+          "from": "fan",
+          "to": "stack",
+          "points": [
+            {
+              "x": 1360,
+              "y": 404
+            },
+            {
+              "x": 1472,
+              "y": 404
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 0,
+            "arrowDirection": "right",
+            "reason": "端口同轴，直接连接"
+          }
+        },
+        {
+          "id": "edge_6",
+          "from": "lime",
+          "to": "reactor",
+          "points": [
+            {
+              "x": 200,
+              "y": 404
+            },
+            {
+              "x": 300,
+              "y": 404
+            },
+            {
+              "x": 300,
+              "y": 240
+            },
+            {
+              "x": 756,
+              "y": 240
+            },
+            {
+              "x": 756,
+              "y": 312
+            },
+            {
+              "x": 776,
+              "y": 312
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 4,
+            "arrowDirection": "right",
+            "reason": "绕开设备或标签障碍"
+          }
+        },
+        {
+          "id": "edge_7",
+          "from": "carbon",
+          "to": "filter",
+          "points": [
+            {
+              "x": 200,
+              "y": 220
+            },
+            {
+              "x": 988,
+              "y": 220
+            },
+            {
+              "x": 988,
+              "y": 404
+            },
+            {
+              "x": 1008,
+              "y": 404
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_8",
+          "from": "boiler",
+          "to": "turbine",
+          "points": [
+            {
+              "x": 664,
+              "y": 496
+            },
+            {
+              "x": 776,
+              "y": 496
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 0,
+            "arrowDirection": "right",
+            "reason": "端口同轴，直接连接"
+          }
+        },
+        {
+          "id": "edge_9",
+          "from": "furnace",
+          "to": "ash",
+          "points": [
+            {
+              "x": 432,
+              "y": 404
+            },
+            {
+              "x": 488,
+              "y": 404
+            },
+            {
+              "x": 488,
+              "y": 312
+            },
+            {
+              "x": 544,
+              "y": 312
+            }
+          ],
+          "resolvedPorts": {
+            "from": "right",
+            "to": "left"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "right",
+            "reason": "端口不同轴，使用居中的正交通道"
+          }
+        },
+        {
+          "id": "edge_10",
+          "from": "fan",
+          "to": "furnace",
+          "routeMode": "return",
+          "label": "烟气回流",
+          "points": [
+            {
+              "x": 1300,
+              "y": 344
+            },
+            {
+              "x": 1300,
+              "y": 240
+            },
+            {
+              "x": 372,
+              "y": 240
+            },
+            {
+              "x": 372,
+              "y": 344
+            }
+          ],
+          "resolvedPorts": {
+            "from": "top",
+            "to": "top"
+          },
+          "routeStatus": "ok",
+          "routeError": null,
+          "routeInfo": {
+            "bends": 2,
+            "arrowDirection": "bottom",
+            "reason": "循环回流使用外侧通道"
+          },
+          "layoutRole": "return"
+        }
+      ]
+    },
+    {
+      "id": "notes",
+      "name": "说明",
+      "width": 800,
+      "height": 600,
+      "components": [
+        {
+          "id": "notes_title",
+          "kind": "text",
+          "label": "保留页面",
+          "x": 40,
+          "y": 40,
+          "w": 300,
+          "h": 80
+        }
+      ]
+    }
+  ]
+}

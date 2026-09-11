@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "browser": "headless Chrome",
+  "isolatedData": true,
+  "fixture": "complex-process.json with rectangular text nodes",
+  "realModel": false,
+  "previewDoesNotApply": true,
+  "diagnosticsVisible": true,
+  "mainOrderRespectsReturn": true,
+  "arrowEndpointsPreserved": true,
+  "returnTwoBends": true,
+  "otherPageUnchanged": true,
+  "persistReload": true,
+  "localMoveReroutes": true,
+  "undoRestores": true,
+  "repeatedOptimizeNoChanges": true,
+  "remaining": "Two shared-path warnings and a crossing remain in this fixture; no claim of arbitrary layout quality"
+}
