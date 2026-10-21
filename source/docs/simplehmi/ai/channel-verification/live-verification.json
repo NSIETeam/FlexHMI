@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "projectUnchanged": true,
+  "previewCancelled": true,
+  "diagnostics": [
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_0",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变",
+      "pageId": "complex_process"
+    },
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_10",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变",
+      "pageId": "complex_process"
+    },
+    {
+      "code": "channel-adjusted",
+      "connectionId": "edge_6",
+      "message": "独立管线的中间通道已调整以减少共线或过近；起止设备与端口不变",
+      "pageId": "complex_process"
+    },
+    {
+      "code": "route-crossing",
+      "connections": [
+        "edge_6",
+        "edge_10"
+      ],
+      "point": {
+        "x": 372,
+        "y": 240
+      },
+      "message": "管线 edge_6 与 烟气回流 交叉但不连通；留白跨线只表示越过",
+      "pageId": "complex_process"
+    },
+    {
+      "code": "route-crossing",
+      "connections": [
+        "edge_7",
+        "edge_10"
+      ],
+      "point": {
+        "x": 372,
+        "y": 220
+      },
+      "message": "管线 edge_7 与 烟气回流 交叉但不连通；留白跨线只表示越过",
+      "pageId": "complex_process"
+    }
+  ],
+  "topologySha256": "0831040e081bdc725f973a14660639995dcbacdff0020a9605f91330511a8bac"
+}

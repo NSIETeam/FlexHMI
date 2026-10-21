@@ -1,0 +1,13 @@
+{
+  "arch": "arm64",
+  "sourceCommit": "4247f6e5c808850e084e55d5a7a8b00a6f466989",
+  "sourceFilesVerified": 566,
+  "mcpToolCount": 24,
+  "ipcDiscovery": true,
+  "nativeDependencies": true,
+  "waterConserved": true,
+  "stopHoldsLevels": true,
+  "projectId": "demo",
+  "instance": "43078002-4c69-40f8-879c-a90367e292f2",
+  "pid": 4222
+}

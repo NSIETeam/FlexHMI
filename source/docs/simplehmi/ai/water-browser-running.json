@@ -1,0 +1,38 @@
+[
+  {
+    "at": 1789040682505,
+    "values": {
+      "source_level": 62,
+      "destination_level": 35,
+      "source_volume": 3.1,
+      "destination_volume": 1.05,
+      "total_volume": 4.15,
+      "transfer_flow": 36,
+      "pump_running": true
+    }
+  },
+  {
+    "at": 1789040684715,
+    "values": {
+      "source_level": 61.6,
+      "destination_level": 35.67,
+      "source_volume": 3.08,
+      "destination_volume": 1.07,
+      "total_volume": 4.15,
+      "transfer_flow": 36,
+      "pump_running": true
+    }
+  },
+  {
+    "at": 1789040686920,
+    "values": {
+      "source_level": 61.2,
+      "destination_level": 36.33,
+      "source_volume": 3.06,
+      "destination_volume": 1.09,
+      "total_volume": 4.15,
+      "transfer_flow": 36,
+      "pump_running": true
+    }
+  }
+]

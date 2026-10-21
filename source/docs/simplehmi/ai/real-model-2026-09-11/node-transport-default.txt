@@ -1,0 +1,4 @@
+v24.20.0
+    var kHeadersTimeoutError = /* @__PURE__ */ Symbol.for("undici.error.UND_ERR_HEADERS_TIMEOUT");
+        return instance && instance[kHeadersTimeoutError] === true;
+        this[kHeadersTimeout] = headersTimeout != null ? headersTimeout : 3e5;

@@ -1,0 +1,9 @@
+{
+  "server/simplehmi/ai.js": "2e383df2edb1f5562b7804fa5aac2b8a375fa91bc604fa2145a5d17619ed874c",
+  "server/simplehmi/ai-contract.js": "2f315c907167a063b7bcd66d6e7007887831ab6deac68d6c94527264d9ecab23",
+  "server/simplehmi/index.js": "dc52b5e62946d3fa07a03e42a1b092fafcfc9c83722c6ac08b339948e7e94fc9",
+  "simplehmi/ai-panel.mjs": "047a2c41221ae9b2d9fa3f83d5367e212393c1b9c9afb410afa6197896b5c63a",
+  "tests/ai.cjs": "1f21c64c578576961731f1bab899400ac4b24d57dbb6c4cd42a30cfda6a0e80a",
+  "tests/knowledge.cjs": "16dbb1fce6b065461c6b617a363869aa24ae84aaccfb3eca30819bf16987cd90",
+  "scripts/browser/assessment-history.cjs": "9b59afe63782dcfdda600a5c73592c5aa0cdb23c0f9d35fccd4e9069f9961f1e"
+}

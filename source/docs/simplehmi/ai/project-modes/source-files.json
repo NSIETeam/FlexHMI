@@ -1,0 +1,13 @@
+{
+  "baseCommit": "feeab9f",
+  "sourceFiles": {
+    "simplehmi/project-mode.mjs": "582062e8bfc3ecee857232dbb3b82a4941419396a5dd7fc3a755a994f4db39dc",
+    "simplehmi/app.js": "27d88ca0cc2860089c654f2fc31d0c115a3ee48b13387a3ac88bc1fccd1e1df0",
+    "simplehmi/agent-studio.mjs": "0a40d2e637b42147a1e28509bb098c514656e49c2dbc1aa75870c3e880a0d882",
+    "simplehmi/brand.css": "590d3ac575c8e7ea35d205d7fa035afa6ebd8ecb061df7c85bbb593c71026eb3",
+    "server/simplehmi/agent.js": "623ce93a1d0fd7b5f2a641dd183ca0da36702e21d151f00ed7fb939d25e7a16f",
+    "scripts/browser/project-modes.cjs": "1999c2a98aa3310205b7f3a2c0b534cb322e2000854c547d54f6b5bbbe5ac84c",
+    "tests/agent.cjs": "8d842925a511fbac198526e31763ca5117cf2d798bdefc9a5d7f1bf5618da043"
+  },
+  "note": "Digests identify the files used by the final browser and targeted Agent checks. Full backend regression and existing editor browser suite also passed during this change."
+}

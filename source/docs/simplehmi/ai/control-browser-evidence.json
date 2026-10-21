@@ -1,0 +1,133 @@
+{
+  "control": {
+    "state": "manual",
+    "reason": "已切换为人工接管；不会自动改变当前输出",
+    "session": null,
+    "rules": [
+      {
+        "id": "water_level_control",
+        "phase": "off",
+        "pending": null,
+        "pendingSince": 1789041450191,
+        "lastWriteAt": 1789041451194,
+        "lastMessage": "回差区间保持当前输出",
+        "writes": 2
+      }
+    ],
+    "events": [
+      {
+        "at": "2026-09-10T11:57:23.498Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "armed",
+        "ruleIds": [
+          "water_level_control"
+        ],
+        "physicalTargets": []
+      },
+      {
+        "at": "2026-09-10T11:57:24.681Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "write-requested",
+        "ruleId": "water_level_control",
+        "tagId": "pump_command",
+        "value": 1,
+        "input": 30,
+        "allowed": true
+      },
+      {
+        "at": "2026-09-10T11:57:25.406Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "write-verified",
+        "ruleId": "water_level_control",
+        "tagId": "pump_command",
+        "value": true
+      },
+      {
+        "at": "2026-09-10T11:57:31.193Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "write-requested",
+        "ruleId": "water_level_control",
+        "tagId": "pump_command",
+        "value": 0,
+        "input": 32.33,
+        "allowed": true
+      },
+      {
+        "at": "2026-09-10T11:57:31.557Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "write-verified",
+        "ruleId": "water_level_control",
+        "tagId": "pump_command",
+        "value": false
+      },
+      {
+        "at": "2026-09-10T11:58:43.880Z",
+        "projectId": "water_a8ab9d6a2131",
+        "event": "manual-takeover",
+        "message": "已切换为人工接管；不会自动改变当前输出"
+      }
+    ]
+  },
+  "values": {
+    "source_level": {
+      "value": 63.6,
+      "lastValue": 63.6,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "destination_level": {
+      "value": 32.33,
+      "lastValue": 32.33,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "pump_command": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "pump_running": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "transfer_flow": {
+      "value": 0,
+      "lastValue": 0,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "source_volume": {
+      "value": 3.18,
+      "lastValue": 3.18,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "destination_volume": {
+      "value": 0.97,
+      "lastValue": 0.97,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "total_volume": {
+      "value": 4.15,
+      "lastValue": 4.15,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "source_low": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789041657596,
+      "quality": "good"
+    },
+    "destination_high": {
+      "value": false,
+      "lastValue": false,
+      "ts": 1789041657596,
+      "quality": "good"
+    }
+  }
+}

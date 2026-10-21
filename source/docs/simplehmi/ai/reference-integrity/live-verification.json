@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "liveUrl": "http://127.0.0.1:1881/simplehmi/",
+  "project": "water_a8ab9d6a2131",
+  "revisionUnchanged": true,
+  "control": "manual",
+  "invalidReferenceRejected": true,
+  "error": {
+    "error": "新增或更改的引用无效：画面/overview/组件/tank_1/tagId → missing_reference_acceptance（目标不存在）。请先创建目标或修正引用；自动清理仅适用于已有对象的删除关联。",
+    "code": "invalid-reference"
+  },
+  "agentStudioSHA256": "a51782aad2e410c16d13c8a014da7b65bb009cc41db787a94128cff012a6b824"
+}

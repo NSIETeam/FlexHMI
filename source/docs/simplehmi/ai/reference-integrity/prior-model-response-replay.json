@@ -1,0 +1,6 @@
+{
+  "source": "unchanged recorded actual model response, offline replay",
+  "code": "invalid-reference",
+  "error": "新增或更改的引用无效：画面/overview/组件/tank_source/tagId → tank_source（目标不存在）；画面/overview/组件/pump/tagId → pump_01（目标不存在）；画面/overview/组件/tank_destination/tagId → tank_destination（目标不存在）；画面/overview/组件/low_alarm/tagId → tank_source（目标不存在）；画面/overview/组件/high_alarm/tagId → tank_destination（目标不存在）；画面/trend/组件/tank_destination/tagId → tank_destination（目标不存在）。请先创建目标或修正引用；自动清理仅适用于已有对象的删除关联。",
+  "projectNotApplied": true
+}

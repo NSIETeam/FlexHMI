@@ -1,0 +1,5 @@
+{
+  "replayedStoredOutput": true,
+  "newModelCall": false,
+  "error": "ID 重复：tank_source；冲突位置：设备/tank_source 与 画面/overview/组件/tank_source。设备、变量、画面、组件和连接的 ID 必须全工程唯一"
+}

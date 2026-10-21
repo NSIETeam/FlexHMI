@@ -1,0 +1,25 @@
+{
+  "sourceSha256": {
+    "server/simplehmi/agent.js": "fdcf7e9fdc3696335fb7ee701e4f427541dc09aa482191e94b397524919a2b44",
+    "server/simplehmi/ai-contract.js": "5ebfc74abc13bbfc87f697158b58a554bc54cbbe812a57bd72b6af5d99b568dd",
+    "simplehmi/agent-studio.mjs": "a51782aad2e410c16d13c8a014da7b65bb009cc41db787a94128cff012a6b824",
+    "integrations/mcp/server.mjs": "af23ef817080f808117fb05fedc77f73c070a8e98a8eaf8b8fa8d39dac3315a3",
+    "integrations/mcp/test/adapter.test.mjs": "6f58de439a1707e9fc6ef6f62dbaabe0d885311158dfad50bd8c30a73c53073a",
+    "scripts/browser/acceptance.cjs": "689dba3622b81eaf265087bfd72fe143376401788bac23ca89b56dc24f48bd20",
+    "tests/agent.cjs": "292e05c058084e16b495588479ff511f06f00b3cc1fadbf40eeff998c0791c28",
+    "tests/ai.cjs": "a161b39f3ac4d3975d4208d51d6ebd1d3b302e3d7ae289e8bc3765517dac810c"
+  },
+  "evidenceSha256": {
+    "browser.log": "eea33bf59ec2ca1eb2bb0814490ef793d386c81d2b75b581aef4387d35983963",
+    "backend.log": "c9694dd60eefa003b3c7ab5df914c592bcd37b51e6ff58e2770d49c33386c459",
+    "mcp.log": "e19c7313620fb76e5bc6aa20d72538a142efeaed24b3353bcb8cc7f759d78979",
+    "assessment.log": "7539cdfbb8dae499694f44e104d67e1b308dcf0d3a71d549e7bc4108476b3b85",
+    "prior-model-response-replay.json": "238e3788147f33aa8a7f6fcb441fdaaa412a301afc4dbbcc9c631a20905506aa",
+    "browser-acceptance.json": "bc5b7fe80cee750f167e670546df6b99cd635ccf06658a916bde717bd4b4849b",
+    "first-browser-attempt.log": "ca2a28d317228680dfaa3ef86e0bd4ee3340fbfbf19eec631ecfc7f95c627ebd",
+    "README.md": "b0f11a8f7d4611a4ae78fe55b80243953018d50c05cbcc7a6db85e820ad79734",
+    "assessment-browser.json": "cf2122a03cd6f038d03563cb426eaf2a11497fc6d22b3647add6b16f6e10fdd2",
+    "FlexHMI-拒绝错误变量引用.png": "9b35962a999a1b0a9344af0195e82cf26eec66a411bcda83e4d29e947c1e8816",
+    "live-verification.json": "2d434c4b1e2512fd56ac6d85b2f1ae01158e656d331c83f489affb053b747e06"
+  }
+}

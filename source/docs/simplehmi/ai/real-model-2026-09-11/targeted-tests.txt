@@ -1,0 +1,28 @@
+✔ model settings reject insecure remote URLs and credentials never persist or move to a new destination (106.049417ms)
+✔ generation wait settings validate bounds and survive restart without persisting credentials (38.658833ms)
+✔ each job snapshots its wait budget and terminal elapsed time stays fixed (346.433583ms)
+✔ a model output becomes a checked preview only, never applies to the live project (25.357583ms)
+✔ invalid model operations get exactly one repair and a second invalid answer fails (96.762916ms)
+✔ concurrent engineering edits invalidate model output rather than replacing the revision (4.352875ms)
+✔ cancellation and timeout cannot produce a late preview (56.142875ms)
+✔ both provider wire protocols parse valid JSON; redirect does not leak bearer token (327.973459ms)
+✔ plan schema is valid draft-07 and model cannot choose actor or revision (2295.052375ms)
+✔ model transport bounds decompressed data and cancellation closes pending headers and bodies (235.318334ms)
+✔ duplicate ID feedback identifies both conflicting objects for model repair (17.669709ms)
+✔ model-generated steps inherit verified citations and stop when their basis changes or expires (345.326ms)
+✔ long model waits never extend the three-minute assessment observation lifetime (7.78675ms)
+✔ knowledge validation, Chinese retrieval, exact version increments and expired sources (233.524291ms)
+✔ citations require exact source excerpts and every observed value has a valid interval (5.816292ms)
+✔ application checks data drift, source mutation, expiration and observed tag configuration (14.090458ms)
+✔ knowledge changes and deletes disable dependent rules and appear in plan changes (20.713916ms)
+✔ model assessment receives selected evidence, creates a cited preview, and never auto-executes (80.680083ms)
+✔ empty-action assessment is a report and does not fabricate a modification (30.87875ms)
+✔ an armed rule faults when its cited source expires, without writing another output (3.822917ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7632.869292

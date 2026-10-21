@@ -1,0 +1,20 @@
+{
+  "runtimeRendered": true,
+  "kioskLaunchRequested": true,
+  "accessPolicyPreserved": true,
+  "stop": true,
+  "nativeRuntime": true,
+  "userDataPreserved": true,
+  "legacyShortcutMigration": true,
+  "arch": "arm64",
+  "installerExecuted": true,
+  "uninstall": true,
+  "editorRendered": true,
+  "desktopNaming": true,
+  "simulation": true,
+  "upgrade": true,
+  "persistence": true,
+  "platform": "Windows",
+  "physicalHardwareTested": false,
+  "singleInstance": true
+}

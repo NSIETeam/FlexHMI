@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "projectUnchanged": true,
+  "invalidThresholdRejected": true,
+  "error": {
+    "error": "画面/overview/组件/invalid_alarm_probe/threshold：报警上限必须是有限数值；留空可保存为未配置",
+    "code": "invalid-plan"
+  },
+  "servedSha256": {
+    "app.js": "29e9278950e197edb76b6944e9f2f117be875f8ad10bd71542c2e67458c02758",
+    "alarm-state.mjs": "f70a0025bac7effcea2f7c75c67568f1e59008be3d2364b5aa397bfffa9092ae",
+    "brand.css": "0174bcf20b9261597240dcbe888649cc9a28921cf520867169bd6bd51aadc994"
+  }
+}

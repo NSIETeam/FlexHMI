@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "platforms": [
+    "win32-x64",
+    "win32-arm64"
+  ],
+  "automatedTests": {
+    "passed": 17,
+    "failed": 0
+  },
+  "nativePEFilesChecked": 10,
+  "installerArchiveTest": "7-Zip: both passed",
+  "extractedCriticalFilesCompared": {
+    "x64": 22,
+    "arm64": 22
+  },
+  "desktopBackendSmoke": [
+    "isolated user directory",
+    "readiness instance nonce",
+    "UI served",
+    "IPC shutdown"
+  ],
+  "windowsMachineExecution": "NOT TESTED",
+  "codeSigned": false
+}

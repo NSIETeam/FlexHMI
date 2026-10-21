@@ -1,0 +1,10 @@
+{
+  "id": "gen_5b3b6025aeea4651be7aa6be67c634de",
+  "status": "failed",
+  "stage": "生成未完成，工程未修改",
+  "attempt": 1,
+  "createdAt": 1789099190865,
+  "elapsedMs": 308578,
+  "timeoutSeconds": 900,
+  "error": "模型服务返回 HTTP 502；请检查模型名、凭据或额度"
+}

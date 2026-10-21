@@ -1,0 +1,133 @@
+{
+  "version": "0.4.1",
+  "platform": "macos",
+  "sourceCommit": "cf5319ec9c5a47b215fbc6569cceef6c86b5053a",
+  "qualificationRun": "https://github.com/NSIETeam/FlexHMI/actions/runs/34497359967",
+  "packages": [
+    {
+      "build": {
+        "version": "0.4.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "sourceCommit": "cf5319ec9c5a47b215fbc6569cceef6c86b5053a",
+        "sourceDirty": false,
+        "file": "FlexHMI-0.4.1-macOS-arm64.dmg",
+        "bytes": 228810409,
+        "sha256": "26764be18f3c3ab56aa194dcd9860a9ce10fa0b8659c0424ee407894137a3949",
+        "developerIdSigned": false,
+        "notarized": false,
+        "nodeArchiveSHA256": "61130f394c1630d211dd50aecc4353d379480f36d3ac913cd85dbba1aed585c6"
+      },
+      "installed": {
+        "platform": "darwin",
+        "arch": "arm64",
+        "macOS": "15.7.9",
+        "dmgMounted": true,
+        "installedFromDmg": true,
+        "signatureIntegrity": true,
+        "nativeRuntime": true,
+        "simulation": true,
+        "mcp": true,
+        "persistence": true,
+        "singleInstance": true,
+        "nativeWebKit": true,
+        "upgrade": true,
+        "uninstallPreservesData": true,
+        "developerIdSigned": false,
+        "notarized": false,
+        "physicalHardwareTested": false
+      },
+      "native": {
+        "passed": true,
+        "runtimeRendered": true,
+        "liveValuesRendered": true,
+        "editorRendered": true,
+        "runtimeEditingHidden": true,
+        "nativeWebKit": true,
+        "nativeArchitecture": "arm64"
+      },
+      "exercise": {
+        "arch": "arm64",
+        "sourceCommit": "cf5319ec9c5a47b215fbc6569cceef6c86b5053a",
+        "sourceFilesVerified": 590,
+        "mcpToolCount": 23,
+        "ipcDiscovery": true,
+        "nativeDependencies": true,
+        "waterConserved": true,
+        "stopHoldsLevels": true,
+        "projectId": "demo",
+        "instance": "6f79dcd5-1775-4c02-aed3-5ba8a02f5278",
+        "pid": 3056
+      },
+      "restore": {
+        "arch": "arm64",
+        "projectId": "demo",
+        "manualAfterRestart": true,
+        "bindingRestored": true
+      }
+    },
+    {
+      "build": {
+        "version": "0.4.1",
+        "platform": "darwin",
+        "arch": "x64",
+        "sourceCommit": "cf5319ec9c5a47b215fbc6569cceef6c86b5053a",
+        "sourceDirty": false,
+        "file": "FlexHMI-0.4.1-macOS-x64.dmg",
+        "bytes": 188362454,
+        "sha256": "bf11ad562ed24b95a8a7d4a6ca484259ab1c222e6cd7bf23b8b09f079e40da1e",
+        "developerIdSigned": false,
+        "notarized": false,
+        "nodeArchiveSHA256": "58e99022c2ff89395576cc7fd4d98cea24bb68081475d5f88b801ee8729fb026"
+      },
+      "installed": {
+        "platform": "darwin",
+        "arch": "x64",
+        "macOS": "15.7.9",
+        "dmgMounted": true,
+        "installedFromDmg": true,
+        "signatureIntegrity": true,
+        "nativeRuntime": true,
+        "simulation": true,
+        "mcp": true,
+        "persistence": true,
+        "singleInstance": true,
+        "nativeWebKit": true,
+        "upgrade": true,
+        "uninstallPreservesData": true,
+        "developerIdSigned": false,
+        "notarized": false,
+        "physicalHardwareTested": false
+      },
+      "native": {
+        "liveValuesRendered": true,
+        "runtimeEditingHidden": true,
+        "nativeWebKit": true,
+        "editorRendered": true,
+        "passed": true,
+        "nativeArchitecture": "x64",
+        "runtimeRendered": true
+      },
+      "exercise": {
+        "arch": "x64",
+        "sourceCommit": "cf5319ec9c5a47b215fbc6569cceef6c86b5053a",
+        "sourceFilesVerified": 590,
+        "mcpToolCount": 23,
+        "ipcDiscovery": true,
+        "nativeDependencies": true,
+        "waterConserved": true,
+        "stopHoldsLevels": true,
+        "projectId": "demo",
+        "instance": "09ca2808-f6b4-4537-8aaa-e56bccfde62b",
+        "pid": 6007
+      },
+      "restore": {
+        "arch": "x64",
+        "projectId": "demo",
+        "manualAfterRestart": true,
+        "bindingRestored": true
+      }
+    }
+  ],
+  "scope": "Native macOS package installation and stated simulation/Agent workflows only; not Developer ID signed or Apple notarized; no physical PLC or real model qualification."
+}

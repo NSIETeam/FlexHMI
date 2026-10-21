@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "browser": "headless Chrome",
+  "isolatedData": true,
+  "newAlarmHasNoAssumedLimit": true,
+  "zeroThresholdActive": true,
+  "clearAndReloadUnconfigured": true,
+  "normalMeansOnlyUpperLimitNotTriggered": true,
+  "unboundExplicit": true,
+  "runtimeStaleInvalidAndOldSamplesCannotShowNormal": true,
+  "recoveryAfterFreshData": true,
+  "faultInjection": "browser values response only",
+  "desktopInteractiveTested": false
+}

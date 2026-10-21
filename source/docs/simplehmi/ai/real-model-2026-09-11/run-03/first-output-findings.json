@@ -1,0 +1,53 @@
+{
+  "qualified": false,
+  "scope": "inspection of unchanged first actual model response",
+  "simulationFlag": null,
+  "missingRequestedSignals": [
+    "transfer_flow",
+    "total_volume"
+  ],
+  "writableFeedback": true,
+  "conflicts": [
+    "device tank_source and overview component tank_source",
+    "device tank_destination and multiple page components tank_destination",
+    "tag pump_command and overview component pump_command"
+  ],
+  "incorrectDisplayBindings": [
+    {
+      "pageId": "overview",
+      "id": "flow_display",
+      "kind": "chart",
+      "tagId": "pump_command",
+      "valueTag": "pump_running"
+    },
+    {
+      "pageId": "overview",
+      "id": "volume_display",
+      "kind": "chart",
+      "tagId": "pump_command",
+      "valueTag": "pump_running"
+    },
+    {
+      "pageId": "trend",
+      "id": "flow_chart",
+      "kind": "chart",
+      "tagId": "pump_command",
+      "valueTag": "pump_running"
+    },
+    {
+      "pageId": "trend",
+      "id": "volume_chart",
+      "kind": "chart",
+      "tagId": "pump_command",
+      "valueTag": "pump_running"
+    }
+  ],
+  "missingAlarmThresholds": [
+    "low_alarm",
+    "high_alarm"
+  ],
+  "notes": [
+    "No model response was edited or replaced with the built-in demonstration.",
+    "No preview or project application was produced by the first invalid response."
+  ]
+}

@@ -1,0 +1,114 @@
+
+> flexhmi@0.3.0 test
+> node --test tests/integration.cjs tests/waste-simulation.cjs tests/layout.cjs tests/agent.cjs tests/water-simulation.cjs tests/ai.cjs tests/control.cjs tests/knowledge.cjs tests/ipc-launcher.cjs tests/agent-write.cjs tests/project-store.cjs tests/connections.cjs
+
+✔ Agent writes bind exact device, revision, current value and declared range (1.871125ms)
+✔ Agent writes reject stale, future, null and untyped target data before actuation (1.304875ms)
+✔ physical target authorization and tag data type are checked before writing (0.161875ms)
+✔ agent deletion repairs all dependent bindings and reports runtime impact (8.094875ms)
+✔ component deletion cascades connections; invalid plans never mutate input (0.571459ms)
+✔ topological layout respects lock and leaves no overlapping nodes (0.767833ms)
+✔ orthogonal routing avoids obstacle and follows moved endpoints (3.518917ms)
+✔ unroutable ports produce a blocking diagnostic, not fake straight lines (0.345125ms)
+✔ mode validation distinguishes available configuration from future execution (0.915041ms)
+✔ different equipment sizes align their visible ports with no gratuitous elbow (0.380167ms)
+✔ reversed and vertical flows point toward destination with the appropriate side (2.107916ms)
+✔ offset horizontal ports use a centered corridor instead of tiny end stubs (0.191625ms)
+✔ manual flow drawings cannot silently disconnect during automatic layout (0.153917ms)
+✔ process optimization preserves unconnected titles, controls and cards while aligning equipment (0.979375ms)
+✔ model settings reject insecure remote URLs and credentials never persist or move to a new destination (4.264166ms)
+✔ a model output becomes a checked preview only, never applies to the live project (5.850584ms)
+✔ invalid model operations get exactly one repair and a second invalid answer fails (1.561833ms)
+✔ concurrent engineering edits invalidate model output rather than replacing the revision (5.527333ms)
+✔ cancellation and timeout cannot produce a late preview (25.034333ms)
+✔ both provider wire protocols parse valid JSON; redirect does not leak bearer token (39.30575ms)
+✔ plan schema is valid draft-07 and model cannot choose actor or revision (140.519917ms)
+✔ same-side return ports use two bends without an artificial last jog (3.859375ms)
+✔ cycles unfold into ordered equipment and an outside return; repeated optimization is stable (3.174459ms)
+✔ branch ordering follows upstream paths and does not depend on input array order (10.07075ms)
+✔ automatic ports avoid equipment labels; explicit obstructed ports explain failure (3.941625ms)
+✔ crossing diagnostics distinguish a visual crossover from actual connectivity (0.48175ms)
+✔ connection editor previews preserve equipment, support reversed arrows and reset automatic ports (1.499ms)
+✔ connection hit targets exist only in editor markup and all text is escaped (2.62775ms)
+✔ runtime flow only animates fresh true Bool values and stops on stale data (0.1425ms)
+✔ hysteresis, stable duration and minimum interval prevent chattering (4.422584ms)
+✔ fresh false permissive requests off; stale data faults without inventing a safe output (2.585167ms)
+✔ manual takeover persists and restarting or configuration changes never auto-arm (1.711583ms)
+✔ external output changes and unverified writes fault rather than being silently overwritten (3.308958ms)
+✔ physical output requires exact session scope and data readiness (1.044583ms)
+✔ validation rejects inverted thresholds, shared output and unauthorized tag types (0.772375ms)
+✔ deleting control dependencies disables the rule with a visible impact instead of leaving a live dangling action (5.154041ms)
+✔ takeover during an in-flight write prevents subsequent rules from writing (1.08125ms)
+▶ SimpleHMI real FUXA integration
+  ✔ simulation runs through FUXA and supports writes (2037.30075ms)
+  ✔ Agent point write is guarded, verified and audited (571.905208ms)
+  ✔ layout saves and reloads without stopping devices (16.359458ms)
+  ✔ invalid and read-only requests fail honestly (24.734417ms)
+  ✔ connection probe performs a real Modbus read (60.15925ms)
+  ✔ failed connection probe returns an error without crashing server (5.382667ms)
+  ✔ FUXA Modbus reads, writes register with scale, writes coil and verifies readback (1596.153333ms)
+  ✔ Agent physical write requires authorization and matches test slave readback (1113.531916ms)
+  ✔ automatic Modbus control needs session authorization and verifies actual coil readback (1049.936084ms)
+  ✔ disconnect becomes stale and cannot report successful write (3511.832375ms)
+  ✔ switch project clears previous device and history exists (1851.053084ms)
+  ✔ server restart restores active saved project (1460.154ms)
+  ✔ agent previews without mutation, applies once, and rejects stale competing plans (909.017834ms)
+  ✔ AI HTTP generation uses configured provider and produces an unapplied checked preview (254.5415ms)
+  ✔ water process runs through FUXA with independent opposite levels, conservation and stop/resume (6248.249834ms)
+  ✔ water rules automatically start and stop with readback; manual takeover and restart stay manual (10508.349417ms)
+  ✔ industry assessment persists exact citations, rejects changed conditions and applies a fresh reviewed strategy (3198.748042ms)
+  ✔ cross-origin mutation is rejected (1.850166ms)
+✔ SimpleHMI real FUXA integration (38208.671584ms)
+✔ IPC controller owns one runtime, authenticates launches and stops only its child (2329.646792ms)
+✔ knowledge validation, Chinese retrieval, exact version increments and expired sources (15.785542ms)
+✔ citations require exact source excerpts and every observed value has a valid interval (0.47275ms)
+✔ application checks data drift, source mutation, expiration and observed tag configuration (3.045875ms)
+✔ knowledge changes and deletes disable dependent rules and appear in plan changes (5.454042ms)
+✔ model assessment receives selected evidence, creates a cited preview, and never auto-executes (6.846709ms)
+✔ empty-action assessment is a report and does not fabricate a modification (2.129125ms)
+✔ an armed rule faults when its cited source expires, without writing another output (3.088125ms)
+✔ alignment preserves dimensions and aligns selected bounds (1.652709ms)
+✔ unequal width objects get equal gaps without overlap (0.507ms)
+✔ group dragging snaps and clamps without changing internal spacing (0.507041ms)
+✔ 112 upstream symbols have unique ids and valid non-clipping viewboxes (2.046542ms)
+✔ saved project lifecycle preserves exact archived content and refuses stale or active targets (9.447291ms)
+✔ new projects and restore destinations are checked again immediately before mutation (3.449333ms)
+✔ SIGKILL before-save reconciles the journal without replaying an interrupted operation (249.380958ms)
+✔ SIGKILL after-save reconciles the journal without replaying an interrupted operation (171.999708ms)
+✔ restart reconciles archived files and reports corrupt journal records without blocking the service (84.848458ms)
+✔ waste project preserves process units, streams, controls, and bindings (1.52225ms)
+✔ process starts, warms up, alarms, recovers, then stops (1.400625ms)
+✔ two tanks conserve water and move in opposite directions with unequal capacity (2.180875ms)
+✔ stopping holds both tank levels and flow is zero; restarting resumes transfer (0.697583ms)
+✔ full destination and dry source limit exact transfer without creating or losing water (0.151167ms)
+✔ water demo binds separate levels, actual pump feedback and writable command with straight routes (64.07ms)
+✔ first launch and project demo entry use the same physically coupled water model (0.216ms)
+ℹ tests 80
+ℹ suites 0
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38342.333375
+
+Official MCP client
+
+> flexhmi@0.3.0 test:mcp
+> npm test --prefix integrations/mcp
+
+
+> flexhmi-mcp@0.3.2 test
+> node --test test/*.test.mjs
+
+✔ MCP URL transport is local-only, rejects redirects and reports uncertain write outcomes (1.572ms)
+✔ MCP validates tool arguments and enforces host scopes without an HTTP request (106.659583ms)
+✔ official MCP stdio client engineers and operates a real FUXA simulation (3014.796875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3247.251292

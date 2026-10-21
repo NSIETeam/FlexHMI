@@ -1,0 +1,20 @@
+{
+  "sourceSha256": {
+    "simplehmi/topology.mjs": "0831040e081bdc725f973a14660639995dcbacdff0020a9605f91330511a8bac",
+    "tests/connections.cjs": "3c969886fec629b7251c5e2123231d7731d633f9a580b73c557e3600a1a1152c",
+    "scripts/browser/complex-layout.cjs": "8785801d376566687fc9c5a4d0e9215b2226db38483c51731670101a32cc0448"
+  },
+  "evidenceSha256": {
+    "before.png": "aadada7e8f619a69efe63a9d24137ef6a546998bf5581674dc8e9f7620270a28",
+    "preview.png": "d4bb1ae5dfa7bc3ac994b1052f42ebcb848f3c817c2da0810d71bb90d90ac49e",
+    "backend.log": "d3d84d6a7db0040edeedaf64808f07577fee8cf9ccacca02dfd7dd857fb11c95",
+    "after.png": "bd6d422a6c587dbfb3b2bfbebb387f1683d24b0126403ab3b61a8ddf493aa33b",
+    "editor-browser.json": "bc5b7fe80cee750f167e670546df6b99cd635ccf06658a916bde717bd4b4849b",
+    "measurement.json": "a973d03abec02370562456417e8a5a5f4e6b2995f8ba0f9fc83e1d7de630b206",
+    "README.md": "7bc18474466a09c5bfbff0c22590d787f114becc3a82b6e91b45a087f10a06ec",
+    "editor-browser.log": "eea33bf59ec2ca1eb2bb0814490ef793d386c81d2b75b581aef4387d35983963",
+    "live-verification.json": "ac1c8ea25bf0b3a740e787e17ad91bdf47cbdb7337451729816b705b482820cc",
+    "complex-browser.log": "ee4adec1cbf2956ffdde0ec79641fe28f726eaeba5e58fec972a2e2f1358dd14",
+    "complex-browser.json": "677aa78186fcfcceb30bbabbac50750a76bd0559d06b9f08a54d80dd439ff1d3"
+  }
+}
